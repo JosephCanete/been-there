@@ -433,7 +433,7 @@ export default function InteractiveMap({
   return (
     <div className={`flex flex-col lg:flex-row h-full ${className}`}>
       {/* Main Map Area - Full width on mobile, 80% on desktop */}
-      <div className="flex-1 relative min-h-[62vh] lg:h-full">
+      <div className="flex-1 relative min-h-[60vh] lg:h-full">
         {renderInteractiveSVG()}
 
         {/* Zoom Controls */}
@@ -564,7 +564,7 @@ export default function InteractiveMap({
       {/* Right Sidebar - Full width on mobile, 20% on desktop */}
       <div className="w-full lg:w-1/5 lg:min-w-72 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="p-3 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="p-3 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 hidden lg:block">
           <h2 className="text-lg lg:text-xl font-bold text-gray-800 mb-1 lg:mb-2">
             Your Progress
           </h2>
