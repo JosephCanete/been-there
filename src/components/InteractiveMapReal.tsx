@@ -433,7 +433,7 @@ export default function InteractiveMap({
   return (
     <div className={`flex flex-col lg:flex-row h-full ${className}`}>
       {/* Main Map Area - Full width on mobile, 80% on desktop */}
-      <div className="flex-1 relative min-h-[50vh] lg:h-full">
+      <div className="flex-1 relative min-h-[62vh] lg:h-full">
         {renderInteractiveSVG()}
 
         {/* Zoom Controls */}
