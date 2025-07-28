@@ -1,12 +1,43 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function SignIn() {
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/map" });
+  const { user, signInWithGoogle, loading } = useAuth();
+  const router = useRouter();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  useEffect(() => {
+    if (user && !loading) {
+      router.push("/map");
+    }
+  }, [user, loading, router]);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsSigningIn(true);
+      await signInWithGoogle();
+      // Router will redirect automatically via useEffect
+    } catch (error) {
+      console.error("Sign in failed:", error);
+      setIsSigningIn(false);
+    }
   };
+
+  // Show loading if user is already signed in
+  if (user && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-blue-700 font-medium">Redirecting to map...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
@@ -47,7 +78,8 @@ export default function SignIn() {
             {/* Google Sign In Button */}
             <button
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 rounded-xl shadow-sm bg-white text-gray-700 font-medium hover:shadow-md hover:border-gray-400 transition-all duration-200 group"
+              disabled={isSigningIn || loading}
+              className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 rounded-xl shadow-sm bg-white text-gray-700 font-medium hover:shadow-md hover:border-gray-400 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                 <path
@@ -68,7 +100,7 @@ export default function SignIn() {
                 />
               </svg>
               <span className="group-hover:text-gray-900 transition-colors">
-                Continue with Google
+                {isSigningIn ? "Signing in..." : "Continue with Google"}
               </span>
             </button>
 

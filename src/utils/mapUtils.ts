@@ -1,11 +1,17 @@
 import { MapState, MapStats, VisitStatus } from "@/types/map";
+import { User } from "firebase/auth";
+import {
+  loadMapStateFromFirestore,
+  saveMapStateToFirestore,
+  migrateLocalStorageToFirestore,
+} from "@/lib/firestore";
 
 const STORAGE_KEY = "philippine-map-visits";
 
 /**
- * Load visit status from localStorage
+ * Load visit status from localStorage (fallback for unauthenticated users)
  */
-export const loadMapState = (): MapState => {
+export const loadMapStateFromLocalStorage = (): MapState => {
   if (typeof window === "undefined") return {};
 
   try {
@@ -18,15 +24,79 @@ export const loadMapState = (): MapState => {
 };
 
 /**
- * Save visit status to localStorage
+ * Save visit status to localStorage (fallback for unauthenticated users)
  */
-export const saveMapState = (mapState: MapState): void => {
+export const saveMapStateToLocalStorage = (mapState: MapState): void => {
   if (typeof window === "undefined") return;
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mapState));
   } catch (error) {
     console.error("Error saving map state to localStorage:", error);
+  }
+};
+
+/**
+ * Load map state - uses Firestore if user is authenticated, localStorage otherwise
+ */
+export const loadMapState = async (user?: User | null): Promise<MapState> => {
+  if (user) {
+    try {
+      const firestoreState = await loadMapStateFromFirestore(user);
+      return firestoreState;
+    } catch (error) {
+      console.error(
+        "Failed to load from Firestore, falling back to localStorage:",
+        error
+      );
+      return loadMapStateFromLocalStorage();
+    }
+  } else {
+    return loadMapStateFromLocalStorage();
+  }
+};
+
+/**
+ * Save map state - uses Firestore if user is authenticated, localStorage otherwise
+ */
+export const saveMapState = async (
+  mapState: MapState,
+  user?: User | null
+): Promise<void> => {
+  console.log("saveMapState called with:", { user: user?.uid, mapState });
+
+  if (user) {
+    try {
+      console.log("User is authenticated, saving to Firestore");
+      await saveMapStateToFirestore(user, mapState);
+      console.log("Firestore save completed");
+    } catch (error) {
+      console.error(
+        "Failed to save to Firestore, falling back to localStorage:",
+        error
+      );
+      saveMapStateToLocalStorage(mapState);
+    }
+  } else {
+    console.log("No user, saving to localStorage");
+    saveMapStateToLocalStorage(mapState);
+  }
+};
+
+/**
+ * Handle user authentication change - migrate data if needed
+ */
+export const handleAuthStateChange = async (
+  user: User | null
+): Promise<MapState> => {
+  if (user) {
+    // User signed in - migrate localStorage data if it exists
+    await migrateLocalStorageToFirestore(user);
+    // Load user's data from Firestore
+    return await loadMapStateFromFirestore(user);
+  } else {
+    // User signed out - load from localStorage
+    return loadMapStateFromLocalStorage();
   }
 };
 

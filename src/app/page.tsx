@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function LandingPage() {
-  const { data: session, status } = useSession();
+  const { user, loading, signInWithGoogle, signOut } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}
@@ -23,12 +23,14 @@ export default function LandingPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-lg md:text-xl font-bold text-gray-900">
                   Been There Philippines
                 </h1>
               </div>
             </div>
-            <div className="flex items-center space-x-6">
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-6">
               <Link
                 href="/about"
                 className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
@@ -43,22 +45,22 @@ export default function LandingPage() {
               </Link>
 
               {/* Authentication Section */}
-              {status === "loading" ? (
+              {loading ? (
                 <div className="animate-pulse bg-gray-200 h-10 w-24 rounded-full"></div>
-              ) : session ? (
+              ) : user ? (
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
-                    {session.user?.image && (
+                    {user.photoURL && (
                       <Image
-                        src={session.user.image}
-                        alt={session.user.name || "User"}
+                        src={user.photoURL}
+                        alt={user.displayName || "User"}
                         width={32}
                         height={32}
                         className="w-8 h-8 rounded-full border-2 border-gray-200"
                       />
                     )}
                     <span className="text-sm font-medium text-gray-700">
-                      {session.user?.name}
+                      {user.displayName}
                     </span>
                   </div>
                   <Link
@@ -77,12 +79,70 @@ export default function LandingPage() {
               ) : (
                 <div className="flex items-center space-x-4">
                   <button
-                    onClick={() => signIn("google")}
+                    onClick={signInWithGoogle}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-200 font-medium"
                   >
                     Sign In with Google
                   </button>
                 </div>
+              )}
+            </div>
+
+            {/* Mobile Authentication/Actions */}
+            <div className="flex md:hidden items-center space-x-2">
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 h-8 w-16 rounded-full"></div>
+              ) : user ? (
+                <>
+                  {user.photoURL && (
+                    <Image
+                      src={user.photoURL}
+                      alt={user.displayName || "User"}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full border-2 border-gray-200"
+                    />
+                  )}
+                  <Link
+                    href="/map"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium"
+                  >
+                    Map
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={signInWithGoogle}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Menu Items (below main header) */}
+          <div className="md:hidden border-t border-gray-200 py-3">
+            <div className="flex justify-center space-x-6">
+              <Link
+                href="/about"
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+              >
+                About
+              </Link>
+              <Link
+                href="/stats"
+                className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+              >
+                Stats
+              </Link>
+              {user && (
+                <button
+                  onClick={signOut}
+                  className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
+                >
+                  Sign Out
+                </button>
               )}
             </div>
           </div>
@@ -106,10 +166,10 @@ export default function LandingPage() {
               you&apos;ve stayed, and where you want to explore next.
             </p>
 
-            {session ? (
+            {user ? (
               <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 font-medium">
-                  Welcome back, {session.user?.name}! Ready to continue your
+                  Welcome back, {user.displayName}! Ready to continue your
                   Philippine adventure?
                 </p>
               </div>
@@ -123,7 +183,7 @@ export default function LandingPage() {
             )}
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              {session ? (
+              {user ? (
                 <>
                   <Link
                     href="/map"
@@ -141,7 +201,7 @@ export default function LandingPage() {
               ) : (
                 <>
                   <button
-                    onClick={() => signIn("google")}
+                    onClick={signInWithGoogle}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                   >
                     🗺️ Sign In & Start Tracking

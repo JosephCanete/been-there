@@ -2,18 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { MapState, MapStats, VisitStatus } from "@/types/map";
+import { philippineRegions, getRegionColor } from "@/data/philippineRegions";
 import {
-  philippineRegions,
-  getRegionColor,
-  getRegionStroke,
-} from "@/data/philippineRegions";
-import {
-  loadMapState,
   saveMapState,
   calculateMapStats,
   getNextVisitStatus,
   getStatusLabel,
+  handleAuthStateChange,
 } from "@/utils/mapUtils";
+import { subscribeToMapState } from "@/lib/firestore";
+import { useAuth } from "./AuthProvider";
 import MapLegend from "./MapLegend";
 import MapStatsDisplay from "./MapStats";
 
@@ -24,14 +22,18 @@ interface InteractiveMapProps {
 /**
  * Interactive SVG Map of the Philippines
  * Allows users to mark regions as visited, stayed, or passed by
- * Persists data in localStorage and provides visual feedback
+ * Persists data in Firestore for authenticated users, localStorage for guests
  */
 export default function InteractiveMap({
   className = "",
 }: InteractiveMapProps) {
+  const { user } = useAuth();
   const [mapState, setMapState] = useState<MapState>({});
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingFromRealtime, setIsUpdatingFromRealtime] = useState(false);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [stats, setStats] = useState<MapStats>({
     beenThere: 0,
     stayedThere: 0,
@@ -40,21 +42,113 @@ export default function InteractiveMap({
     total: philippineRegions.length,
   });
 
-  // Load state from localStorage on component mount
+  // Load state when component mounts or user changes
   useEffect(() => {
-    const savedState = loadMapState();
-    setMapState(savedState);
-    setStats(calculateMapStats(savedState, philippineRegions.length));
-    setIsLoaded(true);
-  }, []);
+    const loadInitialState = async () => {
+      try {
+        const savedState = await handleAuthStateChange(user);
+        setMapState(savedState);
+        setStats(calculateMapStats(savedState, philippineRegions.length));
+        setIsLoaded(true);
+      } catch (error) {
+        console.error("Error loading initial state:", error);
+        setIsLoaded(true);
+      }
+    };
 
-  // Save state to localStorage whenever mapState changes
+    loadInitialState();
+  }, [user]);
+
+  // Subscribe to real-time updates for authenticated users
   useEffect(() => {
-    if (isLoaded) {
-      saveMapState(mapState);
-      setStats(calculateMapStats(mapState, philippineRegions.length));
+    if (!user || !isLoaded) return;
+
+    const unsubscribe = subscribeToMapState(user, (newMapState) => {
+      setIsUpdatingFromRealtime(true);
+
+      // Only update if the new state is different from current state
+      setMapState((prev) => {
+        const isDifferent =
+          JSON.stringify(prev) !== JSON.stringify(newMapState);
+        if (isDifferent) {
+          setStats(calculateMapStats(newMapState, philippineRegions.length));
+          return newMapState;
+        }
+        return prev;
+      });
+
+      // Reset the flag after a short delay
+      setTimeout(() => setIsUpdatingFromRealtime(false), 100);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user, isLoaded]);
+
+  // Save state whenever mapState changes
+  useEffect(() => {
+    if (isLoaded && !isUpdatingFromRealtime) {
+      const saveData = async () => {
+        setIsSaving(true);
+        try {
+          await saveMapState(mapState, user);
+        } catch (error) {
+          console.error("Error saving map state:", error);
+        } finally {
+          setIsSaving(false);
+        }
+      };
+
+      // Debounce saves to avoid too many database writes
+      const timeoutId = setTimeout(saveData, 500);
+      return () => clearTimeout(timeoutId);
     }
-  }, [mapState, isLoaded]);
+  }, [mapState, isLoaded, user, isUpdatingFromRealtime]);
+
+  // Cleanup hover timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
+
+  // Handle region hover with better boundary detection
+  const handleSVGMouseMove = useCallback(
+    (event: React.MouseEvent<SVGSVGElement>) => {
+      const target = event.target as SVGElement;
+
+      // Check if we're hovering over a region path
+      if (target.tagName === "path" && target.getAttribute("data-region-id")) {
+        const regionId = target.getAttribute("data-region-id");
+        if (regionId && regionId !== hoveredRegion) {
+          // Clear any existing timeout
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+            setHoverTimeout(null);
+          }
+          setHoveredRegion(regionId);
+        }
+      }
+    },
+    [hoveredRegion, hoverTimeout]
+  );
+
+  const handleSVGMouseLeave = useCallback(() => {
+    // Clear any existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+    }
+
+    // Add a delay before clearing hover to prevent flickering
+    const timeout = setTimeout(() => {
+      setHoveredRegion(null);
+    }, 150); // Increased delay to 150ms for better stability
+
+    setHoverTimeout(timeout);
+  }, [hoverTimeout]);
 
   // Handle region click - cycle through visit statuses
   const handleRegionClick = useCallback((regionId: string) => {
@@ -62,20 +156,13 @@ export default function InteractiveMap({
       const currentStatus = (prev[regionId] as VisitStatus) || "not-visited";
       const nextStatus = getNextVisitStatus(currentStatus);
 
-      return {
+      const newState = {
         ...prev,
         [regionId]: nextStatus,
       };
+
+      return newState;
     });
-  }, []);
-
-  // Handle region hover
-  const handleRegionMouseEnter = useCallback((regionId: string) => {
-    setHoveredRegion(regionId);
-  }, []);
-
-  const handleRegionMouseLeave = useCallback(() => {
-    setHoveredRegion(null);
   }, []);
 
   // Handle keyboard navigation
@@ -116,9 +203,14 @@ export default function InteractiveMap({
           <div className="relative w-full aspect-square max-w-4xl mx-auto">
             <svg
               viewBox="0 0 1000 1000"
-              className="w-full h-full drop-shadow-lg"
+              className="w-full h-full"
               role="img"
               aria-label="Interactive map of the Philippines"
+              onMouseMove={handleSVGMouseMove}
+              onMouseLeave={handleSVGMouseLeave}
+              style={{
+                outline: "none",
+              }}
             >
               <defs>
                 {/* Gradient definitions for better visuals */}
@@ -133,21 +225,29 @@ export default function InteractiveMap({
                   <stop offset="100%" stopColor="#1E40AF" stopOpacity="0.2" />
                 </linearGradient>
 
-                {/* Drop shadow filter */}
-                <filter
-                  id="dropShadow"
-                  x="-20%"
-                  y="-20%"
-                  width="140%"
-                  height="140%"
-                >
-                  <feDropShadow
-                    dx="2"
-                    dy="2"
-                    stdDeviation="3"
-                    floodOpacity="0.3"
-                  />
-                </filter>
+                {/* CSS to override any hover/focus styles */}
+                <style>{`
+                  path {
+                    stroke-width: 1px !important;
+                    stroke: #6b7280 !important;
+                    vector-effect: non-scaling-stroke !important;
+                    outline: none !important;
+                    border: none !important;
+                  }
+                  path:hover {
+                    stroke-width: 1px !important;
+                    stroke: #6b7280 !important;
+                  }
+                  path:focus {
+                    stroke-width: 1px !important;
+                    stroke: #6b7280 !important;
+                    outline: none !important;
+                  }
+                  path:active {
+                    stroke-width: 1px !important;
+                    stroke: #6b7280 !important;
+                  }
+                `}</style>
               </defs>
 
               {/* Ocean background */}
@@ -163,75 +263,69 @@ export default function InteractiveMap({
                 const status = getRegionStatus(region.id);
                 const isHovered = hoveredRegion === region.id;
 
+                // Don't render hovered region in this loop
+                if (isHovered) return null;
+
                 return (
                   <g key={region.id}>
                     {/* Region path */}
                     <path
                       d={region.pathData}
+                      data-region-id={region.id}
                       className={`
                         ${getRegionColor(status)}
-                        ${getRegionStroke(status)}
-                        stroke-2
                         cursor-pointer
-                        transition-all
-                        duration-200
-                        ease-in-out
-                        ${
-                          isHovered
-                            ? "stroke-4 filter drop-shadow-lg transform scale-105"
-                            : ""
-                        }
                       `}
-                      style={{
-                        filter: isHovered ? "url(#dropShadow)" : "none",
-                        transformOrigin: region.center
-                          ? `${region.center.x}px ${region.center.y}px`
-                          : "center",
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleRegionClick(region.id);
                       }}
-                      onClick={() => handleRegionClick(region.id)}
-                      onMouseEnter={() => handleRegionMouseEnter(region.id)}
-                      onMouseLeave={handleRegionMouseLeave}
                       onKeyDown={(e) => handleRegionKeyDown(e, region.id)}
                       tabIndex={0}
                       role="button"
                       aria-label={`${region.name} - ${getStatusLabel(
                         status
                       )}. Click to change status.`}
-                      aria-describedby={
-                        isHovered ? `tooltip-${region.id}` : undefined
-                      }
                     />
-
-                    {/* Region label (shown on hover) */}
-                    {isHovered && region.center && (
-                      <g>
-                        <text
-                          x={region.center.x}
-                          y={region.center.y - 10}
-                          textAnchor="middle"
-                          className="fill-gray-800 text-sm font-medium pointer-events-none"
-                          style={{
-                            textShadow: "1px 1px 2px rgba(255,255,255,0.8)",
-                          }}
-                        >
-                          {region.name}
-                        </text>
-                        <text
-                          x={region.center.x}
-                          y={region.center.y + 5}
-                          textAnchor="middle"
-                          className="fill-gray-600 text-xs pointer-events-none"
-                          style={{
-                            textShadow: "1px 1px 2px rgba(255,255,255,0.8)",
-                          }}
-                        >
-                          {getStatusLabel(status)}
-                        </text>
-                      </g>
-                    )}
                   </g>
                 );
               })}
+
+              {/* Render hovered region last (on top for z-index priority) */}
+              {hoveredRegion &&
+                (() => {
+                  const region = getRegionById(hoveredRegion);
+                  if (!region) return null;
+
+                  const status = getRegionStatus(region.id);
+
+                  return (
+                    <g key={`${region.id}-hovered`}>
+                      {/* Region path - rendered on top */}
+                      <path
+                        d={region.pathData}
+                        data-region-id={region.id}
+                        className={`
+                        ${getRegionColor(status)}
+                        cursor-pointer
+                      `}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleRegionClick(region.id);
+                        }}
+                        onKeyDown={(e) => handleRegionKeyDown(e, region.id)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`${region.name} - ${getStatusLabel(
+                          status
+                        )}. Click to change status.`}
+                        aria-describedby={`tooltip-${region.id}`}
+                      />
+                    </g>
+                  );
+                })()}
             </svg>
 
             {/* Floating tooltip for better accessibility */}
@@ -272,20 +366,42 @@ export default function InteractiveMap({
               <li>• Hover over regions to see their names</li>
               <li>• Click regions to mark your visit status</li>
               <li>• Use Tab and Enter/Space for keyboard navigation</li>
-              <li>• Your progress is automatically saved</li>
+              <li>
+                • Your progress is automatically saved
+                {user ? " to your account" : " locally"}
+              </li>
             </ul>
           </div>
 
+          {/* Save Status */}
+          {isSaving && (
+            <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600"></div>
+                <span className="text-xs text-yellow-800">
+                  Saving progress...
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Reset Button */}
           <button
-            onClick={() => {
+            onClick={async () => {
               if (
                 confirm("Are you sure you want to reset all your progress?")
               ) {
-                setMapState({});
+                const emptyState = {};
+                setMapState(emptyState);
+                try {
+                  await saveMapState(emptyState, user);
+                } catch (error) {
+                  console.error("Error resetting progress:", error);
+                }
               }
             }}
-            className="w-full px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+            disabled={isSaving}
+            className="w-full px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Reset All Progress
           </button>

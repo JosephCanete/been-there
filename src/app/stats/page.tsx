@@ -3,13 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/components/AuthProvider";
 import { MapStats } from "@/types/map";
 import { loadMapState, calculateMapStats } from "@/utils/mapUtils";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useRouter } from "next/navigation";
 
 export default function StatsPage() {
-  const { data: session } = useSession();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<MapStats>({
     beenThere: 0,
     stayedThere: 0,
@@ -19,22 +21,25 @@ export default function StatsPage() {
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: "/" });
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Load SVG to count total regions
-        const response = await fetch("/philippines.svg");
-        const svgText = await response.text();
-        const regionMatches = svgText.match(/id="PH-[^"]+"/g);
-        const regionCount = regionMatches ? regionMatches.length : 0;
+        // Load map state from the new system
+        const mapState = await loadMapState(user);
 
-        // Load saved state
-        const savedState = loadMapState();
-        setStats(calculateMapStats(savedState, regionCount));
+        // Calculate stats using the existing utility
+        const calculatedStats = calculateMapStats(mapState, 82); // 82 regions in Philippines
+
+        setStats(calculatedStats);
         setIsLoaded(true);
       } catch (error) {
         console.error("Error loading stats:", error);
@@ -43,7 +48,7 @@ export default function StatsPage() {
     };
 
     loadStats();
-  }, []);
+  }, [user]);
 
   const completionPercentage =
     stats.total > 0
@@ -112,9 +117,9 @@ export default function StatsPage() {
                   View Map
                 </Link>
                 <div className="flex items-center space-x-3">
-                  {session?.user?.image && (
+                  {user?.photoURL && (
                     <Image
-                      src={session.user.image}
+                      src={user.photoURL}
                       alt="Profile"
                       width={32}
                       height={32}
