@@ -61,7 +61,7 @@ export default function InteractiveMap({
         const regionCount = regionMatches ? regionMatches.length : 0;
 
         // Load saved state
-        const savedState = loadMapState();
+        const savedState = await loadMapState();
         setMapState(savedState);
         setStats(calculateMapStats(savedState, regionCount));
         setIsLoaded(true);
@@ -105,12 +105,16 @@ export default function InteractiveMap({
 
   // Save state to localStorage whenever mapState changes
   useEffect(() => {
-    if (isLoaded && svgContent) {
-      saveMapState(mapState);
-      const regionMatches = svgContent.match(/id="PH-[^"]+"/g);
-      const regionCount = regionMatches ? regionMatches.length : 0;
-      setStats(calculateMapStats(mapState, regionCount));
-    }
+    const saveData = async () => {
+      if (isLoaded && svgContent) {
+        await saveMapState(mapState);
+        const regionMatches = svgContent.match(/id="PH-[^"]+"/g);
+        const regionCount = regionMatches ? regionMatches.length : 0;
+        setStats(calculateMapStats(mapState, regionCount));
+      }
+    };
+
+    saveData();
   }, [mapState, isLoaded, svgContent]);
 
   // Handle region click - cycle through visit statuses
@@ -641,13 +645,19 @@ export default function InteractiveMap({
         {/* Footer with Reset Button */}
         <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50">
           <button
-            onClick={() => {
+            onClick={async () => {
               if (
                 confirm(
                   "Are you sure you want to reset all your progress? This cannot be undone."
                 )
               ) {
-                setMapState({});
+                const emptyState = {};
+                setMapState(emptyState);
+                try {
+                  await saveMapState(emptyState);
+                } catch (error) {
+                  console.error("Error resetting progress:", error);
+                }
               }
             }}
             className="w-full px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
