@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { MapState, MapStats, VisitStatus } from "@/types/map";
 import {
-  loadMapState,
   saveMapState,
   calculateMapStats,
   getNextVisitStatus,
   getStatusLabel,
+  handleAuthStateChange,
 } from "@/utils/mapUtils";
+import { useAuth } from "./AuthProvider";
 import MapLegend from "./MapLegend";
 import MapStatsDisplay from "./MapStats";
 
@@ -23,6 +24,7 @@ interface InteractiveMapProps {
 export default function InteractiveMap({
   className = "",
 }: InteractiveMapProps) {
+  const { user } = useAuth();
   const [mapState, setMapState] = useState<MapState>({});
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [clickedRegion, setClickedRegion] = useState<string | null>(null);
@@ -60,8 +62,10 @@ export default function InteractiveMap({
         const regionMatches = svgText.match(/id="PH-[^"]+"/g);
         const regionCount = regionMatches ? regionMatches.length : 0;
 
-        // Load saved state
-        const savedState = await loadMapState();
+        // Load saved state using auth state
+        console.log("Loading map state for user:", user?.uid || "guest");
+        const savedState = await handleAuthStateChange(user);
+        console.log("Loaded map state:", savedState);
         setMapState(savedState);
         setStats(calculateMapStats(savedState, regionCount));
         setIsLoaded(true);
@@ -72,7 +76,7 @@ export default function InteractiveMap({
     };
 
     loadSVG();
-  }, []);
+  }, [user]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -103,11 +107,18 @@ export default function InteractiveMap({
     return () => window.removeEventListener("keydown", handleKeyboard);
   }, []);
 
-  // Save state to localStorage whenever mapState changes
+  // Save state whenever mapState changes
   useEffect(() => {
     const saveData = async () => {
       if (isLoaded && svgContent) {
-        await saveMapState(mapState);
+        console.log("=== SAVE DEBUG ===");
+        console.log("About to save mapState:", mapState);
+        console.log("User:", user?.uid);
+        console.log("Is loaded:", isLoaded);
+        console.log("Has SVG content:", !!svgContent);
+
+        await saveMapState(mapState, user);
+
         const regionMatches = svgContent.match(/id="PH-[^"]+"/g);
         const regionCount = regionMatches ? regionMatches.length : 0;
         setStats(calculateMapStats(mapState, regionCount));
@@ -115,12 +126,16 @@ export default function InteractiveMap({
     };
 
     saveData();
-  }, [mapState, isLoaded, svgContent]);
+  }, [mapState, isLoaded, svgContent, user]);
 
   // Handle region click - cycle through visit statuses
   const handleRegionClick = useCallback(
     (regionId: string) => {
       if (isPanning) return; // Don't click regions while panning
+
+      console.log("=== REGION CLICK DEBUG ===");
+      console.log("Region ID:", regionId);
+      console.log("Current user:", user?.uid);
 
       // Add click feedback
       setClickedRegion(regionId);
@@ -130,13 +145,20 @@ export default function InteractiveMap({
         const currentStatus = (prev[regionId] as VisitStatus) || "not-visited";
         const nextStatus = getNextVisitStatus(currentStatus);
 
-        return {
+        console.log(
+          `Changing ${regionId} from ${currentStatus} to ${nextStatus}`
+        );
+
+        const newState = {
           ...prev,
           [regionId]: nextStatus,
         };
+
+        console.log("New map state:", newState);
+        return newState;
       });
     },
-    [isPanning]
+    [isPanning, user]
   );
 
   // Pan and zoom handlers
@@ -635,7 +657,10 @@ export default function InteractiveMap({
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-500 mr-2">•</span>
-                  <span>Your progress is automatically saved locally</span>
+                  <span>
+                    Your progress is automatically saved
+                    {user ? " to your account" : " locally"}
+                  </span>
                 </li>
               </ul>
             </div>
@@ -654,7 +679,7 @@ export default function InteractiveMap({
                 const emptyState = {};
                 setMapState(emptyState);
                 try {
-                  await saveMapState(emptyState);
+                  await saveMapState(emptyState, user);
                 } catch (error) {
                   console.error("Error resetting progress:", error);
                 }
