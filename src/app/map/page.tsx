@@ -3,7 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
 import Image from "next/image";
-import InteractiveMapReal from "@/components/InteractiveMapReal";
+import InteractiveMap from "@/components/InteractiveMap";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useRouter } from "next/navigation";
 
@@ -112,7 +112,7 @@ export default function MapPage() {
 
         {/* Full Screen Map Container */}
         <main className="flex-1 flex overflow-hidden">
-          <InteractiveMapReal className="w-full h-full" />
+          <InteractiveMap className="w-full h-full" />
         </main>
       </div>
     </ProtectedRoute>
