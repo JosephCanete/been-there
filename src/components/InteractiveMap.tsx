@@ -12,6 +12,7 @@ import {
 import { useAuth } from "./AuthProvider";
 import MapLegend from "./MapLegend";
 import MapStatsDisplay from "./MapStats";
+import MapSnapshot from "./MapSnapshot";
 
 interface InteractiveMapProps {
   className?: string;
@@ -442,14 +443,18 @@ export default function InteractiveMap({
         </div>
 
         {/* Sidebar Loading Skeleton */}
-        <div className="w-full lg:w-1/5 lg:min-w-72 bg-white border-t lg:border-t-0 lg:border-l border-gray-200">
+        <div className="w-full lg:w-1/5 lg:min-w-72 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col">
           <div className="p-3 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="h-6 bg-blue-200 rounded animate-pulse mb-2"></div>
             <div className="h-4 bg-blue-100 rounded animate-pulse w-3/4"></div>
           </div>
-          <div className="p-3 lg:p-6 space-y-4">
+          <div className="flex-1 p-3 lg:p-6 space-y-4">
             <div className="h-20 bg-gray-100 rounded animate-pulse"></div>
             <div className="h-32 bg-gray-100 rounded animate-pulse"></div>
+          </div>
+          <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50 space-y-3">
+            <div className="h-10 bg-blue-200 rounded animate-pulse"></div>
+            <div className="h-10 bg-red-200 rounded animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -662,13 +667,28 @@ export default function InteractiveMap({
                     {user ? " to your account" : " locally"}
                   </span>
                 </li>
+                <li className="flex items-start">
+                  <span className="text-blue-500 mr-2">•</span>
+                  <span>
+                    Use the 📸 Capture Map Snapshot button to download a
+                    beautiful image of your travel progress
+                  </span>
+                </li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Footer with Reset Button */}
-        <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50">
+        {/* Footer with Snapshot and Reset Button */}
+        <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50 space-y-3">
+          {/* Snapshot Button */}
+          <MapSnapshot
+            mapState={mapState}
+            stats={stats}
+            svgContent={svgContent}
+          />
+
+          {/* Reset Button */}
           <button
             onClick={async () => {
               if (
