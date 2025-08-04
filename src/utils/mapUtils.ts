@@ -140,10 +140,10 @@ export const calculateMapStats = (
  */
 export const getNextVisitStatus = (currentStatus: VisitStatus): VisitStatus => {
   const statusCycle: VisitStatus[] = [
-    "not-visited",
-    "passed-by",
     "been-there",
     "stayed-there",
+    "passed-by",
+    "not-visited",
   ];
   const currentIndex = statusCycle.indexOf(currentStatus);
   const nextIndex = (currentIndex + 1) % statusCycle.length;
@@ -158,9 +158,9 @@ export const getStatusLabel = (status: VisitStatus): string => {
     case "been-there":
       return "Been There";
     case "stayed-there":
-      return "Stayed There";
+      return "Visited";
     case "passed-by":
-      return "Passed By";
+      return "Lived";
     case "not-visited":
     default:
       return "Not Visited";
@@ -177,7 +177,7 @@ export const getStatusColor = (status: VisitStatus): string => {
     case "stayed-there":
       return "text-blue-600 bg-blue-100";
     case "passed-by":
-      return "text-yellow-600 bg-yellow-100";
+      return "text-red-600 bg-red-100";
     case "not-visited":
     default:
       return "text-gray-600 bg-gray-100";

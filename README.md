@@ -206,7 +206,7 @@ src/
 ### Interactive SVG Map
 
 - High-quality vector graphics for crisp display at any zoom level
-- Predefined coordinate system for accurate region positioning
+- Predefined coordinate system for accurate province positioning
 - Color-coded regions based on visit status
 - Hover effects and click interactions
 

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { MapState, MapStats, VisitStatus } from "@/types/map";
+import { User } from "firebase/auth";
 
 interface MapSnapshotProps {
   mapState: MapState;
   stats: MapStats;
   svgContent: string;
+  user?: User | null;
   className?: string;
 }
 
@@ -17,10 +19,65 @@ export default function MapSnapshot({
   mapState,
   stats,
   svgContent,
+  user,
   className = "",
 }: MapSnapshotProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
+
+  // Get user's first name or fallback
+  const getUserName = (): string => {
+    if (user?.displayName) {
+      return user.displayName.split(" ")[0];
+    }
+    return "Explorer";
+  };
+
+  // Generate personalized congratulatory message
+  const getPersonalizedMessage = (
+    visitedPercentage: number,
+    visitedTotal: number
+  ): { title: string; subtitle: string; emoji: string } => {
+    const name = getUserName();
+
+    if (visitedPercentage === 100) {
+      return {
+        title: `🎉 Congratulations ${name}! 🎉`,
+        subtitle: "You've conquered all of the Philippines!",
+        emoji: "🏆",
+      };
+    } else if (visitedPercentage >= 75) {
+      return {
+        title: `Amazing work, ${name}! 🌟`,
+        subtitle: "You're almost there - keep exploring!",
+        emoji: "🚀",
+      };
+    } else if (visitedPercentage >= 50) {
+      return {
+        title: `Great progress, ${name}! 💪`,
+        subtitle: "Halfway through your Philippine adventure!",
+        emoji: "🗺️",
+      };
+    } else if (visitedPercentage >= 25) {
+      return {
+        title: `Well done, ${name}! ✨`,
+        subtitle: "Your journey is gaining momentum!",
+        emoji: "🌊",
+      };
+    } else if (visitedTotal > 0) {
+      return {
+        title: `Welcome ${name}! 🌴`,
+        subtitle: "Your Philippine adventure has begun!",
+        emoji: "🎯",
+      };
+    } else {
+      return {
+        title: `Hello ${name}! 👋`,
+        subtitle: "Ready to start your Philippine journey?",
+        emoji: "🌺",
+      };
+    }
+  };
 
   // Get fill color based on status (same as InteractiveMap)
   const getFillColor = (status: VisitStatus): string => {
@@ -30,7 +87,7 @@ export default function MapSnapshot({
       case "stayed-there":
         return "#3b82f6"; // blue-500
       case "passed-by":
-        return "#eab308"; // yellow-500
+        return "#dc2626"; // yellow-500
       case "not-visited":
       default:
         return "#d1d5db"; // gray-300
@@ -45,7 +102,7 @@ export default function MapSnapshot({
       case "stayed-there":
         return "#1d4ed8"; // blue-700
       case "passed-by":
-        return "#a16207"; // yellow-700
+        return "#b91c1c"; // red-700
       case "not-visited":
       default:
         return "#6b7280"; // gray-500
@@ -143,6 +200,138 @@ export default function MapSnapshot({
       const visitedPercentage =
         stats.total > 0 ? Math.round((visitedTotal / stats.total) * 100) : 0;
 
+      // Get personalized message
+      const personalMessage = getPersonalizedMessage(
+        visitedPercentage,
+        visitedTotal
+      );
+
+      // Add main header with personalized congratulations
+      const headerGroup = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "g"
+      );
+      headerGroup.setAttribute("transform", "translate(50, -80)");
+
+      // Header background with gradient
+      const headerBg = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "rect"
+      );
+      headerBg.setAttribute("x", "-30");
+      headerBg.setAttribute("y", "-20");
+      headerBg.setAttribute("width", "680");
+      headerBg.setAttribute("height", "100");
+      headerBg.setAttribute("fill", "url(#headerGradient)");
+      headerBg.setAttribute("stroke", "rgba(59, 130, 246, 0.3)");
+      headerBg.setAttribute("stroke-width", "2");
+      headerBg.setAttribute("rx", "16");
+      headerBg.setAttribute(
+        "filter",
+        "drop-shadow(0 6px 20px rgba(0, 0, 0, 0.15))"
+      );
+
+      // Add gradient definition
+      const headerDefs = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "defs"
+      );
+      const headerGradient = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "linearGradient"
+      );
+      headerGradient.setAttribute("id", "headerGradient");
+      headerGradient.setAttribute("x1", "0%");
+      headerGradient.setAttribute("y1", "0%");
+      headerGradient.setAttribute("x2", "100%");
+      headerGradient.setAttribute("y2", "100%");
+
+      const stop1 = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "stop"
+      );
+      stop1.setAttribute("offset", "0%");
+      stop1.setAttribute("stop-color", "rgba(59, 130, 246, 0.1)");
+
+      const stop2 = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "stop"
+      );
+      stop2.setAttribute("offset", "50%");
+      stop2.setAttribute("stop-color", "rgba(147, 51, 234, 0.05)");
+
+      const stop3 = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "stop"
+      );
+      stop3.setAttribute("offset", "100%");
+      stop3.setAttribute("stop-color", "rgba(236, 72, 153, 0.1)");
+
+      headerGradient.appendChild(stop1);
+      headerGradient.appendChild(stop2);
+      headerGradient.appendChild(stop3);
+      headerDefs.appendChild(headerGradient);
+      snapshotSvg.insertBefore(headerDefs, snapshotSvg.firstChild);
+
+      headerGroup.appendChild(headerBg);
+
+      // Emoji decoration
+      const emojiDecor = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+      emojiDecor.setAttribute("x", "20");
+      emojiDecor.setAttribute("y", "20");
+      emojiDecor.setAttribute("font-size", "32");
+      emojiDecor.textContent = personalMessage.emoji;
+      headerGroup.appendChild(emojiDecor);
+
+      // Main congratulatory title
+      const mainTitle = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+      mainTitle.setAttribute("x", "70");
+      mainTitle.setAttribute("y", "20");
+      mainTitle.setAttribute("class", "snapshot-title");
+      mainTitle.setAttribute("font-size", "24");
+      mainTitle.setAttribute("fill", "#1f2937");
+      mainTitle.textContent = personalMessage.title;
+      headerGroup.appendChild(mainTitle);
+
+      // Subtitle
+      const subtitle = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+      subtitle.setAttribute("x", "70");
+      subtitle.setAttribute("y", "45");
+      subtitle.setAttribute("class", "snapshot-subtitle");
+      subtitle.setAttribute("font-size", "16");
+      subtitle.setAttribute("fill", "#6b7280");
+      subtitle.textContent = personalMessage.subtitle;
+      headerGroup.appendChild(subtitle);
+
+      // Current date
+      const currentDate = new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const dateText = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+      dateText.setAttribute("x", "70");
+      dateText.setAttribute("y", "65");
+      dateText.setAttribute("class", "snapshot-text");
+      dateText.setAttribute("font-size", "12");
+      dateText.setAttribute("fill", "#9ca3af");
+      dateText.textContent = currentDate;
+      headerGroup.appendChild(dateText);
+
+      snapshotSvg.appendChild(headerGroup);
+
       // Add decorative corner elements
       const decorativeGroup = document.createElementNS(
         "http://www.w3.org/2000/svg",
@@ -198,7 +387,7 @@ export default function MapSnapshot({
       );
       progressStatsGroup.appendChild(progressBg);
 
-      // Progress title
+      // Progress title with more personality
       const progressTitle = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "text"
@@ -208,7 +397,10 @@ export default function MapSnapshot({
       progressTitle.setAttribute("class", "snapshot-title");
       progressTitle.setAttribute("font-size", "18");
       progressTitle.setAttribute("fill", "#1f2937");
-      progressTitle.textContent = "Travel Progress";
+      progressTitle.textContent =
+        visitedPercentage === 100
+          ? "🏆 Mission Complete!"
+          : "🗺️ Adventure Progress";
       progressStatsGroup.appendChild(progressTitle);
 
       // Large percentage display
@@ -237,7 +429,7 @@ export default function MapSnapshot({
       completeLabel.textContent = "Complete";
       progressStatsGroup.appendChild(completeLabel);
 
-      // Progress details
+      // Progress details with motivational twist
       const progressDetails = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "text"
@@ -247,14 +439,25 @@ export default function MapSnapshot({
       progressDetails.setAttribute("class", "snapshot-text");
       progressDetails.setAttribute("font-size", "14");
       progressDetails.setAttribute("fill", "#6b7280");
-      progressDetails.textContent = `${visitedTotal} of ${stats.total} regions visited`;
+
+      let detailText = `${visitedTotal} of ${stats.total} regions explored`;
+      if (visitedPercentage === 100) {
+        detailText = "🌟 All 82 regions conquered!";
+      } else if (visitedTotal === 0) {
+        detailText = "🎯 Ready to start your journey!";
+      } else {
+        const remaining = stats.total - visitedTotal;
+        detailText = `${visitedTotal} regions explored • ${remaining} more to discover`;
+      }
+
+      progressDetails.textContent = detailText;
       progressStatsGroup.appendChild(progressDetails);
 
       // Individual stats grid
       const statsData = [
-        { label: "Stayed There", value: stats.stayedThere, color: "#3b82f6" },
+        { label: "Visited", value: stats.stayedThere, color: "#3b82f6" },
         { label: "Been There", value: stats.beenThere, color: "#10b981" },
-        { label: "Passed By", value: stats.passedBy, color: "#eab308" },
+        { label: "Lived", value: stats.passedBy, color: "#dc2626" },
         { label: "Not Visited", value: stats.notVisited, color: "#d1d5db" },
       ];
 
@@ -288,6 +491,79 @@ export default function MapSnapshot({
       });
 
       snapshotSvg.appendChild(progressStatsGroup);
+
+      // Add achievement badge for milestones
+      if (visitedPercentage >= 25) {
+        const badgeGroup = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "g"
+        );
+        badgeGroup.setAttribute("transform", "translate(600, 100)");
+
+        // Badge background
+        const badgeBg = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "circle"
+        );
+        badgeBg.setAttribute("cx", "0");
+        badgeBg.setAttribute("cy", "0");
+        badgeBg.setAttribute("r", "35");
+
+        let badgeColor = "#fbbf24"; // yellow
+        let badgeText = "🌟";
+        let badgeLabel = "Explorer";
+
+        if (visitedPercentage === 100) {
+          badgeColor = "#dc2626"; // red
+          badgeText = "🏆";
+          badgeLabel = "Master";
+        } else if (visitedPercentage >= 75) {
+          badgeColor = "#7c3aed"; // purple
+          badgeText = "🚀";
+          badgeLabel = "Champion";
+        } else if (visitedPercentage >= 50) {
+          badgeColor = "#059669"; // green
+          badgeText = "💎";
+          badgeLabel = "Adventurer";
+        }
+
+        badgeBg.setAttribute("fill", badgeColor);
+        badgeBg.setAttribute("stroke", "#ffffff");
+        badgeBg.setAttribute("stroke-width", "3");
+        badgeBg.setAttribute(
+          "filter",
+          "drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25))"
+        );
+        badgeGroup.appendChild(badgeBg);
+
+        // Badge emoji
+        const badgeEmoji = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        badgeEmoji.setAttribute("x", "0");
+        badgeEmoji.setAttribute("y", "8");
+        badgeEmoji.setAttribute("text-anchor", "middle");
+        badgeEmoji.setAttribute("font-size", "24");
+        badgeEmoji.textContent = badgeText;
+        badgeGroup.appendChild(badgeEmoji);
+
+        // Badge label
+        const badgeLabelText = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        badgeLabelText.setAttribute("x", "0");
+        badgeLabelText.setAttribute("y", "55");
+        badgeLabelText.setAttribute("text-anchor", "middle");
+        badgeLabelText.setAttribute("class", "snapshot-title");
+        badgeLabelText.setAttribute("font-size", "12");
+        badgeLabelText.setAttribute("fill", "#374151");
+        badgeLabelText.textContent = badgeLabel;
+        badgeGroup.appendChild(badgeLabelText);
+
+        snapshotSvg.appendChild(badgeGroup);
+      }
 
       // Add legend at bottom
       const legendGroup = document.createElementNS(
@@ -330,9 +606,9 @@ export default function MapSnapshot({
 
       // Legend items
       const legendItems = [
-        { status: "stayed-there", label: "Stayed There", color: "#3b82f6" },
+        { status: "stayed-there", label: "Visited", color: "#3b82f6" },
         { status: "been-there", label: "Been There", color: "#10b981" },
-        { status: "passed-by", label: "Passed By", color: "#eab308" },
+        { status: "passed-by", label: "Lived", color: "#dc2626" },
         { status: "not-visited", label: "Not Visited", color: "#d1d5db" },
       ];
 
@@ -376,7 +652,7 @@ export default function MapSnapshot({
 
       snapshotSvg.appendChild(legendGroup);
 
-      // Add footer watermark
+      // Add footer watermark with personalized touch
       const footerGroup = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "g"
@@ -392,7 +668,7 @@ export default function MapSnapshot({
       footerText.setAttribute("class", "snapshot-text");
       footerText.setAttribute("font-size", "12");
       footerText.setAttribute("fill", "#9ca3af");
-      footerText.textContent = "🇵🇭 Generated by Philippines Travel Tracker";
+      footerText.textContent = `🇵🇭 ${getUserName()}'s Philippine Adventure • Generated ${new Date().toLocaleDateString()}`;
       footerGroup.appendChild(footerText);
 
       const websiteText = document.createElementNS(
@@ -444,7 +720,10 @@ export default function MapSnapshot({
                 // Create download link
                 const link = document.createElement("a");
                 link.href = imageUrl;
-                link.download = `philippines-travel-map-${
+                const userName = getUserName()
+                  .toLowerCase()
+                  .replace(/\s+/g, "-");
+                link.download = `${userName}-philippines-travel-map-${
                   new Date().toISOString().split("T")[0]
                 }.png`;
                 document.body.appendChild(link);

@@ -71,16 +71,16 @@ export default function MapStatsDisplay({
             {stats.stayedThere}
           </div>
           <div className="text-xs lg:text-xs text-blue-700 font-medium">
-            Stayed There
+            Visited
           </div>
         </div>
 
-        <div className="text-center p-2 lg:p-3 bg-yellow-50 rounded-lg border border-yellow-100 hover:bg-yellow-100 transition-colors">
-          <div className="text-lg lg:text-2xl font-bold text-yellow-600">
+        <div className="text-center p-2 lg:p-3 bg-red-50 rounded-lg border border-red-100 hover:bg-red-100 transition-colors">
+          <div className="text-lg lg:text-2xl font-bold text-red-600">
             {stats.passedBy}
           </div>
-          <div className="text-xs lg:text-xs text-yellow-700 font-medium">
-            Passed By
+          <div className="text-xs lg:text-xs text-red-700 font-medium">
+            Lived
           </div>
         </div>
 

@@ -313,7 +313,7 @@ export default function InteractiveMap({
       case "stayed-there":
         return "#3b82f6"; // blue-500
       case "passed-by":
-        return "#eab308"; // yellow-500
+        return "#dc2626"; // red-600
       case "not-visited":
       default:
         return "#d1d5db"; // gray-300
@@ -328,7 +328,7 @@ export default function InteractiveMap({
       case "stayed-there":
         return "#1d4ed8"; // blue-700
       case "passed-by":
-        return "#a16207"; // yellow-700
+        return "#b91c1c"; // red-700
       case "not-visited":
       default:
         return "#6b7280"; // gray-500
@@ -636,8 +636,8 @@ export default function InteractiveMap({
                 <li className="flex items-start">
                   <span className="text-blue-500 mr-2">•</span>
                   <span>
-                    Click regions to cycle through: Not Visited → Passed By →
-                    Been There → Stayed There
+                    Click regions to cycle through: Been There → Visited → Lived
+                    → Not Visited
                   </span>
                 </li>
                 <li className="flex items-start">

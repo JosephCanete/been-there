@@ -91,8 +91,8 @@ export default function AboutPage() {
                   🗺️ Interactive Map
                 </h4>
                 <p className="text-gray-600">
-                  Click on any region or province to cycle through different
-                  status levels. Pan and zoom to explore every corner of the
+                  Click on any province to cycle through different status
+                  levels. Pan and zoom to explore every corner of the
                   Philippines.
                 </p>
               </div>
@@ -144,18 +144,18 @@ export default function AboutPage() {
               <div className="flex items-center space-x-4 p-4 bg-blue-50 rounded-lg">
                 <div className="w-6 h-6 bg-blue-500 rounded border-2 border-blue-700"></div>
                 <div>
-                  <h4 className="font-semibold text-blue-800">Stayed There</h4>
+                  <h4 className="font-semibold text-blue-800">Visited</h4>
                   <p className="text-blue-700 text-sm">
                     Destinations where you&apos;ve spent the night or stayed
                     longer
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4 p-4 bg-yellow-50 rounded-lg">
-                <div className="w-6 h-6 bg-yellow-500 rounded border-2 border-yellow-700"></div>
+              <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-lg">
+                <div className="w-6 h-6 bg-red-500 rounded border-2 border-red-700"></div>
                 <div>
-                  <h4 className="font-semibold text-yellow-800">Passed By</h4>
-                  <p className="text-yellow-700 text-sm">
+                  <h4 className="font-semibold text-red-800">Lived</h4>
+                  <p className="text-red-700 text-sm">
                     Places you&apos;ve passed through during transit
                   </p>
                 </div>

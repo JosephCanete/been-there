@@ -177,15 +177,15 @@ export default function StatsPage() {
               <div className="text-3xl font-bold text-blue-600 mb-2">
                 {stats.stayedThere}
               </div>
-              <div className="text-gray-600 font-medium">Stayed There</div>
+              <div className="text-gray-600 font-medium">Visited</div>
               <div className="text-sm text-gray-500 mt-1">Extended Visits</div>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-lg text-center">
-              <div className="text-3xl font-bold text-yellow-600 mb-2">
+              <div className="text-3xl font-bold text-red-600 mb-2">
                 {stats.passedBy}
               </div>
-              <div className="text-gray-600 font-medium">Passed By</div>
+              <div className="text-gray-600 font-medium">Lived</div>
               <div className="text-sm text-gray-500 mt-1">Transit Points</div>
             </div>
           </div>
@@ -260,8 +260,8 @@ export default function StatsPage() {
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>Been There</span>
-                  <span>Stayed There</span>
-                  <span>Passed By</span>
+                  <span>Visited</span>
+                  <span>Lived</span>
                 </div>
               </div>
             </div>
@@ -291,7 +291,7 @@ export default function StatsPage() {
                       First Explorer
                     </div>
                     <div className="text-sm text-gray-600">
-                      Visit your first region
+                      Visit your first province
                     </div>
                   </div>
                 </div>
