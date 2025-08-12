@@ -440,14 +440,14 @@ export default function MapSnapshot({
       progressDetails.setAttribute("font-size", "14");
       progressDetails.setAttribute("fill", "#6b7280");
 
-      let detailText = `${visitedTotal} of ${stats.total} regions explored`;
+      let detailText = `${visitedTotal} of ${stats.total} provinces explored`;
       if (visitedPercentage === 100) {
-        detailText = "🌟 All 82 regions conquered!";
+        detailText = "🌟 All 82 provinces conquered!";
       } else if (visitedTotal === 0) {
         detailText = "🎯 Ready to start your journey!";
       } else {
         const remaining = stats.total - visitedTotal;
-        detailText = `${visitedTotal} regions explored • ${remaining} more to discover`;
+        detailText = `${visitedTotal} provinces explored • ${remaining} more to discover`;
       }
 
       progressDetails.textContent = detailText;

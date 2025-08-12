@@ -30,7 +30,7 @@ export default function MapStatsDisplay({
       {/* Progress Bar */}
       <div className="mb-3 lg:mb-4">
         <div className="flex justify-between text-xs lg:text-sm text-gray-600 mb-1 lg:mb-2">
-          <span className="font-medium">Regions Visited</span>
+          <span className="font-medium">Provinces Visited</span>
           <span className="font-semibold">
             {visitedTotal} of {stats.total} ({visitedPercentage}%)
           </span>
@@ -43,7 +43,7 @@ export default function MapStatsDisplay({
             aria-valuemin={0}
             aria-valuemax={stats.total}
             aria-valuenow={visitedTotal}
-            aria-label={`${visitedTotal} out of ${stats.total} regions visited`}
+            aria-label={`${visitedTotal} out of ${stats.total} provinces visited`}
           />
         </div>
         {/* Progress percentage display for mobile */}
@@ -103,7 +103,7 @@ export default function MapStatsDisplay({
             <span className="ml-2">🎊</span>
           </div>
           <div className="text-xs lg:text-sm mt-1">
-            You&apos;ve visited all regions!
+            You&apos;ve visited all provinces!
           </div>
         </div>
       )}

@@ -37,7 +37,7 @@ export default function StatsPage() {
         const mapState = await loadMapState(user);
 
         // Calculate stats using the existing utility
-        const calculatedStats = calculateMapStats(mapState, 82); // 82 regions in Philippines
+        const calculatedStats = calculateMapStats(mapState, 82); // 82 provinces in Philippines
 
         setStats(calculatedStats);
         setIsLoaded(true);
@@ -170,7 +170,9 @@ export default function StatsPage() {
                 {stats.beenThere}
               </div>
               <div className="text-gray-600 font-medium">Been There</div>
-              <div className="text-sm text-gray-500 mt-1">Regions Visited</div>
+              <div className="text-sm text-gray-500 mt-1">
+                Provinces Visited
+              </div>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-lg text-center">
@@ -199,13 +201,13 @@ export default function StatsPage() {
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Regions Explored</span>
+                  <span className="text-gray-600">Provinces Explored</span>
                   <span className="font-bold text-gray-900">
                     {exploredRegions} / {stats.total}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Regions Remaining</span>
+                  <span className="text-gray-600">Provinces Remaining</span>
                   <span className="font-bold text-gray-900">
                     {stats.notVisited}
                   </span>
@@ -222,7 +224,7 @@ export default function StatsPage() {
               <div className="mt-6">
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
                   <span>Progress</span>
-                  <span>{exploredRegions} regions</span>
+                  <span>{exploredRegions} provinces</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-4">
                   <div className="flex h-4 rounded-full overflow-hidden">
@@ -312,10 +314,10 @@ export default function StatsPage() {
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900">
-                      Regional Explorer
+                      Provincial Explorer
                     </div>
                     <div className="text-sm text-gray-600">
-                      Explore 5 regions ({Math.min(exploredRegions, 5)}/5)
+                      Explore 5 provinces ({Math.min(exploredRegions, 5)}/5)
                     </div>
                   </div>
                 </div>
@@ -339,7 +341,7 @@ export default function StatsPage() {
                       Island Hopper
                     </div>
                     <div className="text-sm text-gray-600">
-                      Explore 10 regions ({Math.min(exploredRegions, 10)}/10)
+                      Explore 10 provinces ({Math.min(exploredRegions, 10)}/10)
                     </div>
                   </div>
                 </div>
@@ -387,7 +389,7 @@ export default function StatsPage() {
                       Philippines Master
                     </div>
                     <div className="text-sm text-gray-600">
-                      Complete all regions (100%)
+                      Complete all provinces (100%)
                     </div>
                   </div>
                 </div>
@@ -416,8 +418,8 @@ export default function StatsPage() {
             <div className="text-center bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl p-12 text-white">
               <h3 className="text-3xl font-bold mb-4">Keep Exploring!</h3>
               <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
-                You&apos;ve explored {exploredRegions} regions so far. There are
-                still {stats.notVisited} more places to discover!
+                You&apos;ve explored {exploredRegions} provinces so far. There
+                are still {stats.notVisited} more places to discover!
               </p>
               <Link
                 href="/map"
@@ -430,7 +432,7 @@ export default function StatsPage() {
             <div className="text-center bg-gradient-to-r from-yellow-500 to-red-500 rounded-2xl p-12 text-white">
               <h3 className="text-3xl font-bold mb-4">Congratulations! 🎉</h3>
               <p className="text-xl text-yellow-100 mb-8 max-w-2xl mx-auto">
-                Amazing! You&apos;ve explored all regions of the Philippines.
+                Amazing! You&apos;ve explored all provinces of the Philippines.
                 You&apos;re a true Philippines Master!
               </p>
               <Link

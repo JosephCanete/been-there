@@ -140,7 +140,7 @@ export default function InteractiveMap({
 
       // Add click feedback
       setClickedRegion(regionId);
-      setTimeout(() => setClickedRegion(null), 200);
+      setTimeout(() => setClickedRegion(null), 120);
 
       setMapState((prev) => {
         const currentStatus = (prev[regionId] as VisitStatus) || "not-visited";
@@ -293,16 +293,16 @@ export default function InteractiveMap({
   }, []);
 
   // Get region status for styling
-  const getRegionStatus = (regionId: string): VisitStatus => {
-    return (mapState[regionId] as VisitStatus) || "not-visited";
+  const getRegionStatus = (provinceId: string): VisitStatus => {
+    return (mapState[provinceId] as VisitStatus) || "not-visited";
   };
 
   // Get region name from title attribute
-  const getRegionName = (regionId: string): string => {
+  const getRegionName = (provinceId: string): string => {
     const titleMatch = svgContent.match(
-      new RegExp(`id="${regionId}"[^>]*title="([^"]+)"`)
+      new RegExp(`id="${provinceId}"[^>]*title="([^"]+)"`)
     );
-    return titleMatch ? titleMatch[1] : regionId.replace("PH-", "");
+    return titleMatch ? titleMatch[1] : provinceId.replace("PH-", "");
   };
 
   // Get fill color based on status
@@ -372,50 +372,45 @@ export default function InteractiveMap({
             transition: isPanning ? "none" : "transform 0.1s ease-out",
           }}
           role="img"
-          aria-label="Interactive map of the Philippines - Click regions to track your visits"
+          aria-label="Interactive map of the Philippines - Click provinces to track your visits"
         >
-          {/* Render all Philippine regions */}
+          {/* Render all Philippine provinces */}
           {paths.map((path) => {
-            const regionId = path.getAttribute("id") || "";
+            const provinceId = path.getAttribute("id") || "";
             const pathData = path.getAttribute("d") || "";
-            const status = getRegionStatus(regionId);
-            const isHovered = hoveredRegion === regionId;
-            const isClicked = clickedRegion === regionId;
+            const status = getRegionStatus(provinceId);
+            // Subtle click-only feedback
+            const isClicked = clickedRegion === provinceId;
 
             return (
               <path
-                key={regionId}
-                id={`interactive-${regionId}`}
+                key={provinceId}
+                id={`interactive-${provinceId}`}
                 d={pathData}
                 fill={getFillColor(status)}
                 stroke={getStrokeColor(status)}
-                strokeWidth={isHovered || isClicked ? "2" : "1"}
-                className={`cursor-pointer transition-all duration-200 ease-in-out ${
-                  isClicked
-                    ? "brightness-125 scale-105"
-                    : isHovered
-                    ? "brightness-110 scale-102"
-                    : "hover:brightness-105"
+                strokeWidth={"1"}
+                className={`cursor-pointer transition-all duration-100 ease-out ${
+                  isClicked ? "brightness-110 scale-[1.01]" : ""
                 }`}
                 style={{
-                  filter:
-                    isHovered || isClicked
-                      ? "drop-shadow(0 4px 8px rgba(0,0,0,0.3))"
-                      : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+                  filter: isClicked
+                    ? "drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
+                    : "drop-shadow(0 1px 2px rgba(0,0,0,0.12))",
                   transformOrigin: "center",
                 }}
-                onClick={() => handleRegionClick(regionId)}
-                onMouseEnter={() => setHoveredRegion(regionId)}
+                onClick={() => handleRegionClick(provinceId)}
+                onMouseEnter={() => setHoveredRegion(provinceId)}
                 onMouseLeave={() => setHoveredRegion(null)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    handleRegionClick(regionId);
+                    handleRegionClick(provinceId);
                   }
                 }}
                 tabIndex={0}
                 role="button"
-                aria-label={`${getRegionName(regionId)} - ${getStatusLabel(
+                aria-label={`${getRegionName(provinceId)} - ${getStatusLabel(
                   status
                 )}. Click to change status.`}
               />
@@ -600,7 +595,7 @@ export default function InteractiveMap({
             Your Progress
           </h2>
           <p className="text-xs lg:text-sm text-gray-600">
-            Track your Philippine adventures across all {stats.total} regions
+            Track your Philippine adventures across all {stats.total} provinces
           </p>
         </div>
 
@@ -630,14 +625,14 @@ export default function InteractiveMap({
                 <li className="flex items-start">
                   <span className="text-blue-500 mr-2">•</span>
                   <span>
-                    Hover over regions to see their names and current status
+                    Hover over provinces to see their names and current status
                   </span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-500 mr-2">•</span>
                   <span>
-                    Click regions to cycle through: Been There → Visited → Lived
-                    → Not Visited
+                    Click provinces to cycle through: Been There → Visited →
+                    Lived → Not Visited
                   </span>
                 </li>
                 <li className="flex items-start">
