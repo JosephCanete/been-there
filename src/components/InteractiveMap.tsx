@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable */
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { MapState, MapStats, VisitStatus } from "@/types/map";

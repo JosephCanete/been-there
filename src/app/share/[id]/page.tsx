@@ -10,7 +10,7 @@ interface SnapshotDoc {
   mapState: MapState;
   stats: MapStats;
   userDisplayName?: string | null;
-  createdAt?: string;
+  createdAt?: unknown;
 }
 
 export default function ShareSnapshotPage() {
@@ -158,18 +158,20 @@ export default function ShareSnapshotPage() {
       : 0;
 
   // Safely derive a display date from Firestore Timestamp or string
-  const formatCreatedAt = (value: any): string | null => {
-    if (!value) return null;
-    // Firestore Timestamp
-    if (typeof value === "object" && value?.seconds) {
-      const d = new Date(value.seconds * 1000);
+  const formatCreatedAt = (value: unknown): string | null => {
+    if (!value || typeof value !== "object") {
+      const d = new Date(value as string);
+      return isNaN(d.getTime()) ? null : d.toLocaleString();
+    }
+    // Firestore Timestamp-like
+    const maybeTs = value as { seconds?: number };
+    if (typeof maybeTs.seconds === "number") {
+      const d = new Date(maybeTs.seconds * 1000);
       return d.toLocaleString();
     }
-    // ISO string
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? null : d.toLocaleString();
+    return null;
   };
-  const createdAtDisplay = formatCreatedAt((snapshot as any).createdAt);
+  const createdAtDisplay = formatCreatedAt(snapshot.createdAt);
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   return (

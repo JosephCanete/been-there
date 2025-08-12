@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapState, MapStats, VisitStatus } from "@/types/map";
+import { MapState, MapStats } from "@/types/map";
 import { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { serverTimestamp, doc, getDoc, setDoc } from "firebase/firestore";
@@ -27,7 +27,6 @@ export default function MapSnapshot({
 }: MapSnapshotProps) {
   const { user: userCtx } = useAuth();
   const user = userProp ?? userCtx;
-  const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -36,11 +35,12 @@ export default function MapSnapshot({
   // Create a deterministic hash for the snapshot content
   const computeStateHash = (): string => {
     // Stable stringify
-    const stableStringify = (obj: any): string => {
+    const stableStringify = (obj: unknown): string => {
       if (obj === null || typeof obj !== "object") return JSON.stringify(obj);
-      const keys = Object.keys(obj).sort();
+      const record = obj as Record<string, unknown>;
+      const keys = Object.keys(record).sort();
       const entries = keys.map(
-        (k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`
+        (k) => `${JSON.stringify(k)}:${stableStringify(record[k])}`
       );
       return `{${entries.join(",")}}`;
     };
@@ -52,14 +52,6 @@ export default function MapSnapshot({
     }
     // Convert to unsigned and hex
     return (hash >>> 0).toString(16);
-  };
-
-  // Get user's first name or fallback
-  const getUserName = (): string => {
-    if (user?.displayName) {
-      return user.displayName.split(" ")[0];
-    }
-    return "Explorer";
   };
 
   // Generate a shareable permalink by storing snapshot data in Firestore
@@ -98,41 +90,6 @@ export default function MapSnapshot({
     } finally {
       setIsSharing(false);
     }
-  };
-
-  // Get fill color based on status (same as InteractiveMap)
-  const getFillColor = (status: VisitStatus): string => {
-    switch (status) {
-      case "been-there":
-        return "#10b981"; // green-500
-      case "stayed-there":
-        return "#3b82f6"; // blue-500
-      case "passed-by":
-        return "#dc2626"; // yellow-500
-      case "not-visited":
-      default:
-        return "#d1d5db"; // gray-300
-    }
-  };
-
-  // Get stroke color based on status (same as InteractiveMap)
-  const getStrokeColor = (status: VisitStatus): string => {
-    switch (status) {
-      case "been-there":
-        return "#047857"; // green-700
-      case "stayed-there":
-        return "#1d4ed8"; // blue-700
-      case "passed-by":
-        return "#b91c1c"; // red-700
-      case "not-visited":
-      default:
-        return "#6b7280"; // gray-500
-    }
-  };
-
-  // Get region status for styling
-  const getRegionStatus = (regionId: string): VisitStatus => {
-    return (mapState[regionId] as VisitStatus) || "not-visited";
   };
 
   // Show success message briefly after generation

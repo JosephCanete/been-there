@@ -49,38 +49,9 @@ export default function AboutPage() {
 
       {/* About Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            About Been There Philippines
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            A passion project dedicated to helping Filipino travelers and
-            visitors document their incredible journeys across our beautiful
-            archipelago.
-          </p>
-        </div>
-
         <div className="space-y-16">
           {/* Mission Section */}
-          <section className="bg-white rounded-2xl p-8 shadow-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              Our Mission
-            </h3>
-            <p className="text-gray-600 text-lg leading-relaxed mb-6">
-              The Philippines is home to over 7,640 islands, each with its own
-              unique beauty, culture, and experiences. Our interactive travel
-              tracker makes it easy to visualize and document your journey
-              across this incredible archipelago.
-            </p>
-            <p className="text-gray-600 text-lg leading-relaxed">
-              Whether you&apos;re a local exploring your own backyard or a
-              visitor discovering the Philippines for the first time, this tool
-              helps you keep track of where you&apos;ve been and plan where to
-              go next.
-            </p>
-          </section>
 
-          {/* How It Works */}
           <section className="bg-white rounded-2xl p-8 shadow-lg">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
               How It Works
@@ -168,33 +139,6 @@ export default function AboutPage() {
                     Areas you haven&apos;t explored yet
                   </p>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Technical Details */}
-          <section className="bg-white rounded-2xl p-8 shadow-lg">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">
-              Built With
-            </h3>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Frontend</h4>
-                <ul className="text-gray-600 space-y-1">
-                  <li>• Next.js 15 with App Router</li>
-                  <li>• React 18 with TypeScript</li>
-                  <li>• Tailwind CSS for styling</li>
-                  <li>• Interactive SVG maps</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Features</h4>
-                <ul className="text-gray-600 space-y-1">
-                  <li>• Pan and zoom interactions</li>
-                  <li>• Touch and mobile support</li>
-                  <li>• Local storage persistence</li>
-                  <li>• Keyboard navigation</li>
-                </ul>
               </div>
             </div>
           </section>
