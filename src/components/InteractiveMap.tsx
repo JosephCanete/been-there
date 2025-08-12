@@ -589,7 +589,7 @@ export default function InteractiveMap({
   return (
     <div className={`flex flex-col lg:flex-row h-full ${className}`}>
       {/* Main Map Area - Full width on mobile, 80% on desktop */}
-      <div className="flex-1 relative min-h-[50vh] xl:min-h-[60vh] min-w-0 lg:h-full">
+      <div className="flex-1 relative min-h-[40vh] xl:min-h-[60vh] min-w-0 lg:h-full">
         {renderInteractiveSVG()}
       </div>
 
