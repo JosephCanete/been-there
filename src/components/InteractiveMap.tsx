@@ -240,6 +240,23 @@ export default function InteractiveMap({
     [isPanning, user]
   );
 
+  // Reset handler reused by mobile/desktop buttons
+  const handleReset = useCallback(async () => {
+    if (
+      confirm(
+        "Are you sure you want to reset all your progress? This cannot be undone."
+      )
+    ) {
+      const emptyState: MapState = {} as MapState;
+      setMapState(emptyState);
+      try {
+        await saveMapState(emptyState, user);
+      } catch (error) {
+        console.error("Error resetting progress:", error);
+      }
+    }
+  }, [user]);
+
   // Reset zoom and pan
   const controlsRef = useRef<{
     zoomIn: () => void;
@@ -589,7 +606,7 @@ export default function InteractiveMap({
   return (
     <div className={`flex flex-col lg:flex-row h-full ${className}`}>
       {/* Main Map Area - Full width on mobile, 80% on desktop */}
-      <div className="flex-1 relative min-h-[40vh] xl:min-h-[60vh] min-w-0 lg:h-full">
+      <div className="flex-1 relative min-h-[60vh] min-w-0 lg:h-full">
         {renderInteractiveSVG()}
       </div>
 
@@ -605,6 +622,34 @@ export default function InteractiveMap({
           </p>
         </div>
 
+        {/* Mobile Actions: Snapshot + Reset (visible only on mobile) */}
+        <div className="p-3 lg:p-6 border-b border-gray-200 bg-gray-50 space-y-3 lg:hidden">
+          <MapSnapshot
+            mapState={mapState}
+            stats={stats}
+            svgContent={svgContent}
+          />
+          <button
+            onClick={handleReset}
+            className="w-full px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
+          >
+            <svg
+              className="w-3 h-3 lg:w-4 lg:h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Reset All Progress
+          </button>
+        </div>
+
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
@@ -613,54 +658,7 @@ export default function InteractiveMap({
 
             {/* Instructions */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 lg:p-4 border border-blue-200">
-              <h3 className="text-xs lg:text-sm font-semibold text-blue-800 mb-2 lg:mb-3 flex items-center">
-                <svg
-                  className="w-3 h-3 lg:w-4 lg:h-4 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                How to Use
-              </h3>
               <ul className="text-xs text-blue-700 space-y-1 lg:space-y-2">
-                <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>
-                    Hover over provinces to see their names and current status
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>
-                    Click provinces to cycle through: Been There → Visited →
-                    Lived → Not Visited
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>Drag to pan around the map</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>Scroll to zoom in/out or use zoom controls</span>
-                </li>
-                <li className="flex items-start lg:hidden">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>Use pinch gestures to zoom on touch devices</span>
-                </li>
-                <li className="hidden lg:flex lg:items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>Use Tab and Enter/Space for keyboard navigation</span>
-                </li>
-                <li className="hidden lg:flex lg:items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>Press R to reset view, +/- to zoom</span>
-                </li>
                 <li className="flex items-start">
                   <span className="text-blue-500 mr-2">•</span>
                   <span>
@@ -680,8 +678,8 @@ export default function InteractiveMap({
           </div>
         </div>
 
-        {/* Footer with Snapshot and Reset Button */}
-        <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50 space-y-3">
+        {/* Footer with Snapshot and Reset Button (desktop only) */}
+        <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50 space-y-3 hidden lg:block">
           {/* Snapshot Button */}
           <MapSnapshot
             mapState={mapState}
@@ -689,23 +687,8 @@ export default function InteractiveMap({
             svgContent={svgContent}
           />
 
-          {/* Reset Button */}
           <button
-            onClick={async () => {
-              if (
-                confirm(
-                  "Are you sure you want to reset all your progress? This cannot be undone."
-                )
-              ) {
-                const emptyState = {};
-                setMapState(emptyState);
-                try {
-                  await saveMapState(emptyState, user);
-                } catch (error) {
-                  console.error("Error resetting progress:", error);
-                }
-              }
-            }}
+            onClick={handleReset}
             className="w-full px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 flex items-center justify-center"
           >
             <svg
