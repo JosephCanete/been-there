@@ -73,7 +73,32 @@ export default function AboutPage() {
       {/* About Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-16">
-          {/* Mission Section */}
+          <section className="bg-white rounded-2xl p-8 shadow-lg">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">About Me </h1>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              I'm a software engineer based in Singapore who loves coding and
+              building useful things. AI helped me to accelerate development and
+              refine the experience of this personal project.
+            </p>
+            <div className="mt-6">
+              <a
+                href="https://www.linkedin.com/in/raymond-joseph-ca%C3%B1ete-30b84b192/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-[#0a66c2] text-white px-4 py-2 text-sm font-medium shadow hover:bg-[#084c97] transition-colors"
+              >
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.447-2.136 2.943v5.663H9.352V9h3.414v1.561h.049c.476-.9 1.637-1.852 3.37-1.852 3.603 0 4.268 2.372 4.268 5.455v6.288zM5.337 7.433a2.063 2.063 0 110-4.126 2.063 2.063 0 010 4.126zM7.116 20.452H3.555V9h3.561v11.452z" />
+                </svg>
+                Connect on LinkedIn
+              </a>
+            </div>
+          </section>
 
           <section className="bg-white rounded-2xl p-8 shadow-lg">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">

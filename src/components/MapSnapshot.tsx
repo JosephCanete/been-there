@@ -107,7 +107,7 @@ export default function MapSnapshot({
           onClick={createPermalink}
           disabled={isSharing || !user}
           title={!user ? "Sign in to create a shareable link" : undefined}
-          className={`w-full px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:shadow-lg ${className}`}
+          className={`w-full px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:shadow-lg ${className}`}
         >
           {isSharing ? (
             <>
@@ -132,14 +132,14 @@ export default function MapSnapshot({
         </button>
 
         {shareError && (
-          <div className="text-center p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+          <div className="text-center p-2 bg-red-50 rounded-lg text-xs text-red-700">
             {shareError}
           </div>
         )}
 
         {shareUrl && (
           <div className="space-y-2">
-            <div className="text-center p-2 bg-green-50 border border-green-200 rounded-lg">
+            <div className="text-center p-2 bg-green-50 rounded-lg">
               <p className="text-xs text-green-700 font-medium flex items-center justify-center">
                 <svg
                   className="w-3 h-3 mr-1"
@@ -157,7 +157,7 @@ export default function MapSnapshot({
             </div>
             <div className="flex items-center gap-2">
               <input
-                className="flex-1 px-2 py-2 text-xs border rounded text-black bg-white"
+                className="flex-1 px-2 py-2 text-xs rounded text-black bg-white"
                 value={shareUrl}
                 readOnly
               />

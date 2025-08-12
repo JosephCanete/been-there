@@ -325,8 +325,11 @@ export default function InteractiveMap({
       <div
         className={`map-zoom-container ${
           isPseudoFullscreen ? "fixed inset-0 z-50" : "absolute inset-0"
-        } overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 w-full h-full`}
+        } overflow-hidden w-full h-full`}
         style={{
+          // Gentle sea-like blend (light to slightly deeper blue)
+          background:
+            "radial-gradient(1200px 800px at 20% 15%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0) 60%), linear-gradient(135deg, #cfeeff 0%, #aadaff 45%, #8ccfff 100%)",
           cursor: isPanning ? "grabbing" : "grab",
           touchAction: "none",
           // Use dynamic viewport units to better handle mobile browser chrome

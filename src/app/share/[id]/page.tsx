@@ -156,6 +156,32 @@ export default function ShareSnapshotPage() {
     snapshot.stats.total > 0
       ? Math.round((visitedTotal / snapshot.stats.total) * 100)
       : 0;
+  const remainingProvinces = Math.max(0, snapshot.stats.total - visitedTotal);
+
+  // Category percentages
+  const totalProvinces = snapshot.stats.total;
+  const pct = (v: number) =>
+    totalProvinces > 0 ? Math.round((v / totalProvinces) * 100) : 0;
+  const pctBeen = pct(snapshot.stats.beenThere);
+  const pctStayed = pct(snapshot.stats.stayedThere);
+  const pctPassed = pct(snapshot.stats.passedBy);
+  const pctNot = pct(snapshot.stats.notVisited);
+
+  // Achievements thresholds
+  const achievedFirst = visitedTotal >= 1;
+  const progressFirst = Math.min(visitedTotal, 1);
+
+  const achieved5 = visitedTotal >= 5;
+  const progress5 = Math.min(visitedTotal, 5);
+
+  const achieved10 = visitedTotal >= 10;
+  const progress10 = Math.min(visitedTotal, 10);
+
+  const achieved50 = visitedPercentage >= 50;
+  const progress50 = visitedPercentage; // percent
+
+  const achievedMaster = totalProvinces > 0 && visitedTotal >= totalProvinces;
+  const progressMaster = visitedPercentage; // percent
 
   // Safely derive a display date from Firestore Timestamp or string
   const formatCreatedAt = (value: unknown): string | null => {
@@ -189,9 +215,15 @@ export default function ShareSnapshotPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-            <div className="relative aspect-[3/4] w-full">
-              <div className="absolute inset-0 p-4 lg:p-6">
-                <div className="w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
+            <div className="relative aspect-[3/4] w-full h-full">
+              <div className="absolute inset-0 ">
+                <div
+                  className="w-full h-full rounded-lg shadow-inner overflow-hidden"
+                  style={{
+                    background:
+                      "radial-gradient(1200px 800px at 20% 15%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0) 60%), linear-gradient(135deg, #cfeeff 0%, #aadaff 45%, #8ccfff 100%)",
+                  }}
+                >
                   {renderedSVG}
                 </div>
               </div>
@@ -251,46 +283,365 @@ export default function ShareSnapshotPage() {
             </div>
 
             {/* Progress card */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-4 lg:p-6 space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Progress
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {visitedPercentage}% complete
-                </p>
+            <div className="bg-white rounded-xl shadow border border-gray-200 p-4 lg:p-6 space-y-5">
+              <div className="flex items-center gap-4">
+                {/* Donut chart */}
+                <div className="relative w-20 h-20 lg:w-24 lg:h-24 shrink-0">
+                  <div
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: `conic-gradient(#3b82f6 ${
+                        visitedPercentage * 3.6
+                      }deg, #e5e7eb 0deg)`,
+                    }}
+                  />
+                  <div className="absolute inset-2 rounded-full bg-white flex items-center justify-center">
+                    <span className="text-sm lg:text-base font-bold text-gray-800">
+                      {visitedPercentage}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Title + linear progress */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Progress
+                  </h2>
+                  <p className="text-sm text-gray-600 truncate">
+                    Visited {visitedTotal} of {snapshot.stats.total} provinces
+                  </p>
+                  <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${visitedPercentage}%`,
+                        background: "linear-gradient(90deg, #60a5fa, #6366f1)",
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="p-3 rounded border border-gray-200">
-                  <div className="text-gray-500">Visited</div>
-                  <div className="text-gray-900 font-semibold">
-                    {snapshot.stats.stayedThere}
+
+              {/* Category breakdown */}
+              <div className="space-y-3">
+                {/* Been There */}
+                <div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: "#10b981" }}
+                        aria-hidden
+                      />
+                      <span className="text-gray-700">Been There</span>
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      {snapshot.stats.beenThere}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${pctBeen}%`,
+                        backgroundColor: "#10b981",
+                      }}
+                    />
                   </div>
                 </div>
-                <div className="p-3 rounded border border-gray-200">
-                  <div className="text-gray-500">Been There</div>
-                  <div className="text-gray-900 font-semibold">
-                    {snapshot.stats.beenThere}
+
+                {/* Visited (Stayed There) */}
+                <div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: "#3b82f6" }}
+                        aria-hidden
+                      />
+                      <span className="text-gray-700">Visited</span>
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      {snapshot.stats.stayedThere}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${pctStayed}%`,
+                        backgroundColor: "#3b82f6",
+                      }}
+                    />
                   </div>
                 </div>
-                <div className="p-3 rounded border border-gray-200">
-                  <div className="text-gray-500">Lived</div>
-                  <div className="text-gray-900 font-semibold">
-                    {snapshot.stats.passedBy}
+
+                {/* Lived (Passed By) */}
+                <div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: "#dc2626" }}
+                        aria-hidden
+                      />
+                      <span className="text-gray-700">Lived</span>
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      {snapshot.stats.passedBy}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${pctPassed}%`,
+                        backgroundColor: "#dc2626",
+                      }}
+                    />
                   </div>
                 </div>
-                <div className="p-3 rounded border border-gray-200">
-                  <div className="text-gray-500">Not Visited</div>
-                  <div className="text-gray-900 font-semibold">
-                    {snapshot.stats.notVisited}
+
+                {/* Not Visited */}
+                <div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: "#d1d5db" }}
+                        aria-hidden
+                      />
+                      <span className="text-gray-700">Not Visited</span>
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      {snapshot.stats.notVisited}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${pctNot}%`,
+                        backgroundColor: "#9ca3af",
+                      }}
+                    />
                   </div>
                 </div>
               </div>
+
               <div className="text-sm text-gray-600">
                 Total provinces:{" "}
                 <span className="font-semibold text-gray-800">
                   {snapshot.stats.total}
                 </span>
+              </div>
+            </div>
+
+            {/* Achievements card */}
+            <div className="rounded-xl p-4 lg:p-5 shadow bg-white border border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                Achievements
+              </h3>
+              <div className="space-y-3">
+                {/* First Explorer */}
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{
+                    borderColor: achievedFirst ? "#10b981" : "#e5e7eb",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg" aria-hidden>
+                        🗺️
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">
+                          First Explorer
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Visit your first province
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        achievedFirst ? "text-emerald-600" : "text-gray-500"
+                      }`}
+                    >
+                      {progressFirst}/1
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${(progressFirst / 1) * 100}%`,
+                        backgroundColor: achievedFirst ? "#10b981" : "#9ca3af",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Provincial Explorer */}
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{
+                    borderColor: achieved5 ? "#3b82f6" : "#e5e7eb",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg" aria-hidden>
+                        🏝️
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">
+                          Provincial Explorer
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Explore 5 provinces
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        achieved5 ? "text-blue-600" : "text-gray-500"
+                      }`}
+                    >
+                      {progress5}/5
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${(progress5 / 5) * 100}%`,
+                        backgroundColor: achieved5 ? "#3b82f6" : "#9ca3af",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Island Hopper */}
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{
+                    borderColor: achieved10 ? "#8b5cf6" : "#e5e7eb",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg" aria-hidden>
+                        🏆
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">
+                          Island Hopper
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Explore 10 provinces
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        achieved10 ? "text-violet-600" : "text-gray-500"
+                      }`}
+                    >
+                      {progress10}/10
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${(progress10 / 10) * 100}%`,
+                        backgroundColor: achieved10 ? "#8b5cf6" : "#9ca3af",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Halfway Hero */}
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{
+                    borderColor: achieved50 ? "#f59e0b" : "#e5e7eb",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg" aria-hidden>
+                        🛫
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">
+                          Halfway Hero
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Reach 50% completion
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        achieved50 ? "text-amber-600" : "text-gray-500"
+                      }`}
+                    >
+                      {progress50}%
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${Math.min(progress50, 100)}%`,
+                        backgroundColor: achieved50 ? "#f59e0b" : "#9ca3af",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Philippines Master */}
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{
+                    borderColor: achievedMaster ? "#10b981" : "#e5e7eb",
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg" aria-hidden>
+                        🇵🇭
+                      </span>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">
+                          Philippines Master
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Complete all provinces
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        achievedMaster ? "text-emerald-600" : "text-gray-500"
+                      }`}
+                    >
+                      {progressMaster}%
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 rounded bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{
+                        width: `${Math.min(progressMaster, 100)}%`,
+                        backgroundColor: achievedMaster ? "#10b981" : "#9ca3af",
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
