@@ -46,11 +46,6 @@ export default function MapLegend({ className = "" }: MapLegendProps) {
           </div>
         ))}
       </div>
-      <div className="mt-4 pt-3 border-t border-gray-200">
-        <p className="text-xs text-gray-600">
-          Click on provinces to cycle through statuses
-        </p>
-      </div>
     </div>
   );
 }

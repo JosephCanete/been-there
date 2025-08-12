@@ -26,8 +26,9 @@ export default function MapPage() {
         {/* Compact Header */}
         <header className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg z-10">
           <div className="px-4 sm:px-6 py-3 sm:py-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
-              <div className="flex items-center space-x-3 w-full sm:w-auto">
+            <div className="flex items-center justify-between gap-2">
+              {/* Left: Brand + Title */}
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
                 <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full">
                   <svg
                     className="w-4 h-4 sm:w-5 sm:h-5 text-white"
@@ -41,14 +42,15 @@ export default function MapPage() {
                   <h1 className="text-lg sm:text-xl font-bold text-white truncate">
                     Been There Philippines
                   </h1>
-                  <p className="text-blue-100 text-xs sm:text-sm truncate">
+                  <p className="hidden sm:block text-blue-100 text-xs sm:text-sm truncate">
                     Welcome back,{" "}
                     {user?.displayName?.split(" ")[0] || "Explorer"}!
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between w-full sm:w-auto space-x-2 sm:space-x-4">
+              {/* Right: Nav + (desktop) user actions */}
+              <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
                 {/* Desktop Navigation */}
                 <div className="hidden sm:flex items-center space-x-4">
                   <Link
@@ -87,8 +89,8 @@ export default function MapPage() {
                   </a>
                 </div>
 
-                {/* User Actions */}
-                <div className="flex items-center space-x-2 sm:space-x-3">
+                {/* User Actions (desktop only) */}
+                <div className="hidden sm:flex items-center space-x-2 sm:space-x-3">
                   {user?.photoURL && (
                     <Image
                       src={user.photoURL}

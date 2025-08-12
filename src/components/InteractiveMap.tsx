@@ -655,26 +655,7 @@ export default function InteractiveMap({
           <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
             <MapStatsDisplay stats={stats} />
             <MapLegend />
-
             {/* Instructions */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 lg:p-4 border border-blue-200">
-              <ul className="text-xs text-blue-700 space-y-1 lg:space-y-2">
-                <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>
-                    Your progress is automatically saved
-                    {user ? " to your account" : " locally"}
-                  </span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
-                  <span>
-                    Use the 📸 Capture Map Snapshot button to download a
-                    beautiful image of your travel progress
-                  </span>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
 
