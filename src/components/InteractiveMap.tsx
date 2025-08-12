@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { MapState, MapStats, VisitStatus } from "@/types/map";
 import {
   saveMapState,
@@ -13,6 +13,7 @@ import { useAuth } from "./AuthProvider";
 import MapLegend from "./MapLegend";
 import MapStatsDisplay from "./MapStats";
 import MapSnapshot from "./MapSnapshot";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface InteractiveMapProps {
   className?: string;
@@ -39,17 +40,12 @@ export default function InteractiveMap({
     total: 0,
   });
 
-  // Pan and zoom state
-  const [transform, setTransform] = useState({
-    scale: 1,
-    translateX: 0,
-    translateY: 0,
-  });
+  // Pan and zoom state (managed by react-zoom-pan-pinch)
   const [isPanning, setIsPanning] = useState(false);
-  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
-  const [lastTouchDistance, setLastTouchDistance] = useState<number | null>(
-    null
-  );
+  const [currentScale, setCurrentScale] = useState(1);
+  // Fullscreen support
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Load SVG content and parse regions
   useEffect(() => {
@@ -79,6 +75,50 @@ export default function InteractiveMap({
     loadSVG();
   }, [user]);
 
+  useEffect(() => {
+    const handleFsChange = () => {
+      const d: any = document as any;
+      const fsEl =
+        document.fullscreenElement ||
+        d.webkitFullscreenElement ||
+        d.mozFullScreenElement ||
+        d.msFullscreenElement;
+      setIsFullscreen(!!fsEl);
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    document.addEventListener("webkitfullscreenchange", handleFsChange as any);
+    document.addEventListener("mozfullscreenchange", handleFsChange as any);
+    document.addEventListener("MSFullscreenChange", handleFsChange as any);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFsChange as any
+      );
+      document.removeEventListener(
+        "mozfullscreenchange",
+        handleFsChange as any
+      );
+      document.removeEventListener("MSFullscreenChange", handleFsChange as any);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const el: any = containerRef.current as any;
+    const d: any = document as any;
+    if (!isFullscreen) {
+      if (el?.requestFullscreen) el.requestFullscreen();
+      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el?.msRequestFullscreen) el.msRequestFullscreen();
+      else if (el?.mozRequestFullScreen) el.mozRequestFullScreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
+      else if (d.msExitFullscreen) d.msExitFullscreen();
+      else if (d.mozCancelFullScreen) d.mozCancelFullScreen();
+    }
+  }, [isFullscreen]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {
@@ -86,20 +126,15 @@ export default function InteractiveMap({
 
       switch (e.key.toLowerCase()) {
         case "r":
-          setTransform({ scale: 1, translateX: 0, translateY: 0 });
+          // Reset view handled by control ref
+          controlsRef.current?.resetTransform();
           break;
         case "=":
         case "+":
-          setTransform((prev) => ({
-            ...prev,
-            scale: Math.min(prev.scale * 1.2, 5),
-          }));
+          controlsRef.current?.zoomIn();
           break;
         case "-":
-          setTransform((prev) => ({
-            ...prev,
-            scale: Math.max(prev.scale * 0.8, 0.5),
-          }));
+          controlsRef.current?.zoomOut();
           break;
       }
     };
@@ -162,134 +197,14 @@ export default function InteractiveMap({
     [isPanning, user]
   );
 
-  // Pan and zoom handlers
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-      const newScale = Math.min(Math.max(transform.scale * zoomFactor, 0.5), 5);
-
-      // Zoom towards mouse position
-      const scaleChange = newScale / transform.scale;
-      const newTranslateX =
-        transform.translateX -
-        (mouseX - centerX - transform.translateX) * (scaleChange - 1);
-      const newTranslateY =
-        transform.translateY -
-        (mouseY - centerY - transform.translateY) * (scaleChange - 1);
-
-      setTransform({
-        scale: newScale,
-        translateX: newTranslateX,
-        translateY: newTranslateY,
-      });
-    },
-    [transform]
-  );
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 0) {
-      // Left mouse button
-      setIsPanning(true);
-      setLastPanPoint({ x: e.clientX, y: e.clientY });
-      e.preventDefault();
-    }
-  }, []);
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (isPanning) {
-        const deltaX = e.clientX - lastPanPoint.x;
-        const deltaY = e.clientY - lastPanPoint.y;
-
-        setTransform((prev) => ({
-          ...prev,
-          translateX: prev.translateX + deltaX,
-          translateY: prev.translateY + deltaY,
-        }));
-
-        setLastPanPoint({ x: e.clientX, y: e.clientY });
-      }
-    },
-    [isPanning, lastPanPoint]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsPanning(false);
-  }, []);
-
   // Reset zoom and pan
+  const controlsRef = useRef<{
+    zoomIn: () => void;
+    zoomOut: () => void;
+    resetTransform: () => void;
+  } | null>(null);
   const resetView = useCallback(() => {
-    setTransform({ scale: 1, translateX: 0, translateY: 0 });
-  }, []);
-
-  // Touch handlers for mobile
-  const getTouchDistance = (touches: React.TouchList) => {
-    if (touches.length < 2) return null;
-    const touch1 = touches[0];
-    const touch2 = touches[1];
-    return Math.sqrt(
-      Math.pow(touch2.clientX - touch1.clientX, 2) +
-        Math.pow(touch2.clientY - touch1.clientY, 2)
-    );
-  };
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      setIsPanning(true);
-      setLastPanPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-    } else if (e.touches.length === 2) {
-      setLastTouchDistance(getTouchDistance(e.touches));
-    }
-    e.preventDefault();
-  }, []);
-
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      if (e.touches.length === 1 && isPanning) {
-        const deltaX = e.touches[0].clientX - lastPanPoint.x;
-        const deltaY = e.touches[0].clientY - lastPanPoint.y;
-
-        setTransform((prev) => ({
-          ...prev,
-          translateX: prev.translateX + deltaX,
-          translateY: prev.translateY + deltaY,
-        }));
-
-        setLastPanPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-      } else if (e.touches.length === 2 && lastTouchDistance) {
-        const newDistance = getTouchDistance(e.touches);
-        if (newDistance) {
-          const zoomFactor = newDistance / lastTouchDistance;
-          const newScale = Math.min(
-            Math.max(transform.scale * zoomFactor, 0.5),
-            5
-          );
-
-          setTransform((prev) => ({ ...prev, scale: newScale }));
-          setLastTouchDistance(newDistance);
-        }
-      }
-      e.preventDefault();
-    },
-    [isPanning, lastPanPoint, lastTouchDistance, transform.scale]
-  );
-
-  const handleTouchEnd = useCallback(() => {
-    setIsPanning(false);
-    setLastTouchDistance(null);
+    controlsRef.current?.resetTransform();
   }, []);
 
   // Get region status for styling
@@ -351,189 +266,204 @@ export default function InteractiveMap({
 
     return (
       <div
-        className="absolute inset-0 flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100"
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className="map-zoom-container absolute inset-0 overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 w-full h-full"
         style={{ cursor: isPanning ? "grabbing" : "grab", touchAction: "none" }}
+        ref={containerRef}
       >
-        <svg
-          viewBox="-20 -20 770 1250"
-          className="max-w-full max-h-full select-none"
-          style={{
-            aspectRatio: "770/1250",
-            transform: `translate(${transform.translateX}px, ${transform.translateY}px) scale(${transform.scale})`,
-            transformOrigin: "center",
-            transition: isPanning ? "none" : "transform 0.1s ease-out",
-          }}
-          role="img"
-          aria-label="Interactive map of the Philippines - Click provinces to track your visits"
-        >
-          {/* Render all Philippine provinces */}
-          {paths.map((path) => {
-            const provinceId = path.getAttribute("id") || "";
-            const pathData = path.getAttribute("d") || "";
-            const status = getRegionStatus(provinceId);
-            // Subtle click-only feedback
-            const isClicked = clickedRegion === provinceId;
-
-            return (
-              <path
-                key={provinceId}
-                id={`interactive-${provinceId}`}
-                d={pathData}
-                fill={getFillColor(status)}
-                stroke={getStrokeColor(status)}
-                strokeWidth={"1"}
-                className={`cursor-pointer transition-all duration-100 ease-out ${
-                  isClicked ? "brightness-110 scale-[1.01]" : ""
-                }`}
-                style={{
-                  filter: isClicked
-                    ? "drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
-                    : "drop-shadow(0 1px 2px rgba(0,0,0,0.12))",
-                  transformOrigin: "center",
-                }}
-                onClick={() => handleRegionClick(provinceId)}
-                onMouseEnter={() => setHoveredRegion(provinceId)}
-                onMouseLeave={() => setHoveredRegion(null)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleRegionClick(provinceId);
-                  }
-                }}
-                tabIndex={0}
-                role="button"
-                aria-label={`${getRegionName(provinceId)} - ${getStatusLabel(
-                  status
-                )}. Click to change status.`}
-              />
-            );
-          })}
-        </svg>
-      </div>
-    );
-  };
-
-  if (!isLoaded) {
-    return (
-      <div className={`flex flex-col lg:flex-row h-full ${className}`}>
-        {/* Map Loading Skeleton */}
-        <div className="flex-1 relative min-h-[50vh] lg:h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 lg:h-16 lg:w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-blue-700 font-medium">
-              Loading Philippine map...
-            </p>
-            <p className="text-blue-600 text-sm mt-1">
-              Preparing your travel tracker
-            </p>
-          </div>
-        </div>
-
-        {/* Sidebar Loading Skeleton */}
-        <div className="w-full lg:w-1/5 lg:min-w-72 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col">
-          <div className="p-3 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <div className="h-6 bg-blue-200 rounded animate-pulse mb-2"></div>
-            <div className="h-4 bg-blue-100 rounded animate-pulse w-3/4"></div>
-          </div>
-          <div className="flex-1 p-3 lg:p-6 space-y-4">
-            <div className="h-20 bg-gray-100 rounded animate-pulse"></div>
-            <div className="h-32 bg-gray-100 rounded animate-pulse"></div>
-          </div>
-          <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50 space-y-3">
-            <div className="h-10 bg-blue-200 rounded animate-pulse"></div>
-            <div className="h-10 bg-red-200 rounded animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`flex flex-col lg:flex-row h-full ${className}`}>
-      {/* Main Map Area - Full width on mobile, 80% on desktop */}
-      <div className="flex-1 relative min-h-[60vh] lg:h-full">
-        {renderInteractiveSVG()}
-
-        {/* Zoom Controls */}
-        <div className="absolute top-2 right-2 lg:top-4 lg:right-4 flex flex-col gap-1 lg:gap-2 z-30">
-          <button
-            onClick={() =>
-              setTransform((prev) => ({
-                ...prev,
-                scale: Math.min(prev.scale * 1.2, 5),
-              }))
-            }
-            className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
-            title="Zoom In"
+        <div className="w-full h-full">
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.5}
+            maxScale={5}
+            wheel={{ step: 0.2 }}
+            pinch={{ step: 0.2 }}
+            doubleClick={{ disabled: true }}
+            panning={{ velocityDisabled: true }}
+            limitToBounds={false}
+            alignmentAnimation={{
+              disabled: true,
+              sizeX: 0,
+              sizeY: 0,
+              animationTime: 0,
+            }}
+            onPanningStart={() => setIsPanning(true)}
+            onPanningStop={() => setIsPanning(false)}
+            onInit={({ state }) => setCurrentScale(state.scale)}
+            onZoom={({ state }) => setCurrentScale(state.scale)}
+            onZoomStop={({ state }) => setCurrentScale(state.scale)}
+            onPinchingStop={({ state }) => setCurrentScale(state.scale)}
           >
-            <svg
-              className="w-4 h-4 lg:w-5 lg:h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={() =>
-              setTransform((prev) => ({
-                ...prev,
-                scale: Math.max(prev.scale * 0.8, 0.5),
-              }))
-            }
-            className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
-            title="Zoom Out"
-          >
-            <svg
-              className="w-4 h-4 lg:w-5 lg:h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M18 12H6"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={resetView}
-            className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
-            title="Reset View"
-          >
-            <svg
-              className="w-4 h-4 lg:w-5 lg:h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </button>
-          <div className="px-1 py-0.5 lg:px-2 lg:py-1 bg-white rounded shadow-lg border border-gray-200 text-xs text-black">
-            {Math.round(transform.scale * 100)}%
-          </div>
+            {({ zoomIn, zoomOut, resetTransform }) => {
+              // Expose controls to keyboard handler and external reset
+              controlsRef.current = { zoomIn, zoomOut, resetTransform };
+              return (
+                <>
+                  <TransformComponent
+                    wrapperClass="w-full h-full"
+                    contentClass="w-full h-full"
+                    wrapperStyle={{ width: "100%", height: "100%" }}
+                    contentStyle={{ width: "100%", height: "100%" }}
+                  >
+                    <svg
+                      viewBox="-20 -20 770 1250"
+                      className="w-full h-full select-none"
+                      preserveAspectRatio="xMidYMid meet"
+                      role="img"
+                      aria-label="Interactive map of the Philippines - Click provinces to track your visits"
+                    >
+                      {/* Render all Philippine provinces */}
+                      {paths.map((path) => {
+                        const provinceId = path.getAttribute("id") || "";
+                        const pathData = path.getAttribute("d") || "";
+                        const status = getRegionStatus(provinceId);
+                        // Subtle click-only feedback
+                        const isClicked = clickedRegion === provinceId;
+
+                        return (
+                          <path
+                            key={provinceId}
+                            id={`interactive-${provinceId}`}
+                            d={pathData}
+                            fill={getFillColor(status)}
+                            stroke={getStrokeColor(status)}
+                            strokeWidth={"1"}
+                            className={`cursor-pointer transition-all duration-100 ease-out ${
+                              isClicked ? "brightness-110 scale-[1.01]" : ""
+                            }`}
+                            style={{
+                              filter: isClicked
+                                ? "drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
+                                : "drop-shadow(0 1px 2px rgba(0,0,0,0.12))",
+                              transformOrigin: "center",
+                            }}
+                            onClick={() => handleRegionClick(provinceId)}
+                            onMouseEnter={() => setHoveredRegion(provinceId)}
+                            onMouseLeave={() => setHoveredRegion(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                handleRegionClick(provinceId);
+                              }
+                            }}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`${getRegionName(
+                              provinceId
+                            )} - ${getStatusLabel(
+                              status
+                            )}. Click to change status.`}
+                          />
+                        );
+                      })}
+                    </svg>
+                  </TransformComponent>
+
+                  {/* Zoom Controls (moved inside wrapper for access to controls) */}
+                  <div className="absolute top-2 right-2 lg:top-4 lg:right-4 flex flex-col gap-1 lg:gap-2 z-30">
+                    <button
+                      onClick={() => zoomIn()}
+                      className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
+                      title="Zoom In"
+                    >
+                      <svg
+                        className="w-4 h-4 lg:w-5 lg:h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => zoomOut()}
+                      className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
+                      title="Zoom Out"
+                    >
+                      <svg
+                        className="w-4 h-4 lg:w-5 lg:h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M18 12H6"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => resetTransform()}
+                      className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
+                      title="Reset View"
+                    >
+                      <svg
+                        className="w-4 h-4 lg:w-5 lg:h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={toggleFullscreen}
+                      className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
+                      title={
+                        isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"
+                      }
+                    >
+                      {isFullscreen ? (
+                        // Exit fullscreen icon
+                        <svg
+                          className="w-4 h-4 lg:w-5 lg:h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 3H5v4M5 15v4h4M21 9V5h-4M17 21h4v-4"
+                          />
+                        </svg>
+                      ) : (
+                        // Enter fullscreen icon
+                        <svg
+                          className="w-4 h-4 lg:w-5 lg:h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 4H4v4M20 16v4h-4M20 8V4h-4M4 16v4h4"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                    <div className="px-1 py-0.5 lg:px-2 lg:py-1 bg-white rounded shadow-lg border border-gray-200 text-xs text-black">
+                      {Math.round(currentScale * 100)}%
+                    </div>
+                  </div>
+                </>
+              );
+            }}
+          </TransformWrapper>
         </div>
 
         {/* Enhanced floating tooltip */}
@@ -585,6 +515,52 @@ export default function InteractiveMap({
             </div>
           </div>
         )}
+      </div>
+    );
+  };
+
+  // Loading state UI
+  if (!isLoaded) {
+    return (
+      <div className={`flex flex-col lg:flex-row h-full ${className}`}>
+        {/* Map Loading Skeleton */}
+        <div className="flex-1 relative min-h-[50vh] lg:h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 lg:h-16 lg:w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-blue-700 font-medium">
+              Loading Philippine map...
+            </p>
+            <p className="text-blue-600 text-sm mt-1">
+              Preparing your travel tracker
+            </p>
+          </div>
+        </div>
+
+        {/* Sidebar Loading Skeleton */}
+        <div className="w-full lg:w-1/5 lg:min-w-72 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col">
+          <div className="p-3 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="h-6 bg-blue-200 rounded animate-pulse mb-2"></div>
+            <div className="h-4 bg-blue-100 rounded animate-pulse w-3/4"></div>
+          </div>
+          <div className="flex-1 p-3 lg:p-6 space-y-4">
+            <div className="h-20 bg-gray-100 rounded animate-pulse"></div>
+            <div className="h-32 bg-gray-100 rounded animate-pulse"></div>
+          </div>
+          <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50 space-y-3">
+            <div className="h-10 bg-blue-200 rounded animate-pulse"></div>
+            <div className="h-10 bg-red-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main layout
+  return (
+    <div className={`flex flex-col lg:flex-row h-full ${className}`}>
+      {/* Main Map Area - Full width on mobile, 80% on desktop */}
+      <div className="flex-1 relative min-h-[60vh] min-w-0 lg:h-full">
+        {renderInteractiveSVG()}
       </div>
 
       {/* Right Sidebar - Full width on mobile, 20% on desktop */}
