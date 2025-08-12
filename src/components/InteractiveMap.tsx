@@ -46,6 +46,7 @@ export default function InteractiveMap({
   const [currentScale, setCurrentScale] = useState(1);
   // Fullscreen support
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Load SVG content and parse regions
@@ -85,6 +86,8 @@ export default function InteractiveMap({
         d.mozFullScreenElement ||
         d.msFullscreenElement;
       setIsFullscreen(!!fsEl);
+      // If we entered or exited real fullscreen, ensure pseudo mode is off
+      if (!!fsEl) setIsPseudoFullscreen(false);
     };
     document.addEventListener("fullscreenchange", handleFsChange);
     document.addEventListener("webkitfullscreenchange", handleFsChange as any);
@@ -104,21 +107,60 @@ export default function InteractiveMap({
     };
   }, []);
 
-  const toggleFullscreen = useCallback(() => {
+  // Lock body scroll when using pseudo fullscreen (mobile fallback)
+  useEffect(() => {
+    if (!isPseudoFullscreen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isPseudoFullscreen]);
+
+  const toggleFullscreen = useCallback(async () => {
     const el: any = containerRef.current as any;
     const d: any = document as any;
-    if (!isFullscreen) {
-      if (el?.requestFullscreen) el.requestFullscreen();
-      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      else if (el?.msRequestFullscreen) el.msRequestFullscreen();
-      else if (el?.mozRequestFullScreen) el.mozRequestFullScreen();
+
+    // Determine availability of Fullscreen API on this element
+    const request =
+      el?.requestFullscreen ||
+      el?.webkitRequestFullscreen ||
+      el?.msRequestFullscreen ||
+      el?.mozRequestFullScreen;
+
+    if (!isFullscreen && !isPseudoFullscreen) {
+      if (request) {
+        try {
+          const result = request.call(el);
+          // Some browsers return a promise
+          if (result && typeof result.then === "function") {
+            await result;
+          }
+        } catch (e) {
+          // Fallback to CSS-based fullscreen on failure (common on iOS Safari)
+          setIsPseudoFullscreen(true);
+        }
+      } else {
+        // No Fullscreen API support on this element (mobile Safari)
+        setIsPseudoFullscreen(true);
+      }
     } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
-      else if (d.msExitFullscreen) d.msExitFullscreen();
-      else if (d.mozCancelFullScreen) d.mozCancelFullScreen();
+      // Exit fullscreen
+      if (
+        document.exitFullscreen ||
+        d.webkitExitFullscreen ||
+        d.msExitFullscreen ||
+        d.mozCancelFullScreen
+      ) {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
+        else if (d.msExitFullscreen) d.msExitFullscreen();
+        else if (d.mozCancelFullScreen) d.mozCancelFullScreen();
+      } else {
+        setIsPseudoFullscreen(false);
+      }
     }
-  }, [isFullscreen]);
+  }, [isFullscreen, isPseudoFullscreen]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -264,8 +306,15 @@ export default function InteractiveMap({
 
     return (
       <div
-        className="map-zoom-container absolute inset-0 overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 w-full h-full"
-        style={{ cursor: isPanning ? "grabbing" : "grab", touchAction: "none" }}
+        className={`map-zoom-container ${
+          isPseudoFullscreen ? "fixed inset-0 z-50" : "absolute inset-0"
+        } overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 w-full h-full`}
+        style={{
+          cursor: isPanning ? "grabbing" : "grab",
+          touchAction: "none",
+          // Use dynamic viewport units to better handle mobile browser chrome
+          height: isPseudoFullscreen ? "100dvh" : undefined,
+        }}
         ref={containerRef}
       >
         <div className="w-full h-full">
@@ -397,32 +446,15 @@ export default function InteractiveMap({
                       </svg>
                     </button>
                     <button
-                      onClick={() => resetTransform()}
-                      className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
-                      title="Reset View"
-                    >
-                      <svg
-                        className="w-4 h-4 lg:w-5 lg:h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    </button>
-                    <button
                       onClick={toggleFullscreen}
                       className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
                       title={
-                        isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"
+                        isFullscreen || isPseudoFullscreen
+                          ? "Exit Fullscreen"
+                          : "Enter Fullscreen"
                       }
                     >
-                      {isFullscreen ? (
+                      {isFullscreen || isPseudoFullscreen ? (
                         // Exit fullscreen icon
                         <svg
                           className="w-4 h-4 lg:w-5 lg:h-5"

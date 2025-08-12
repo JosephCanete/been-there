@@ -4,26 +4,49 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full">
+          <div className="flex h-14 sm:h-16 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-sm">
                 <svg
-                  className="w-5 h-5 text-white"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-white"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Been There Philippines
-                </h1>
-              </div>
+              <span className="hidden sm:block text-base sm:text-xl font-bold text-gray-900">
+                Been There Philippines
+              </span>
             </Link>
-            <div className="flex items-center space-x-6">
+
+            {/* Mobile CTA */}
+            <div className="md:hidden">
+              <Link
+                href="/map"
+                className="inline-flex items-center gap-1.5 rounded-full bg-gray-900 text-white px-3 py-1.5 text-sm font-medium shadow hover:bg-black transition-colors"
+              >
+                <span>Open Map</span>
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+            </div>
+
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-6">
               <Link
                 href="/"
                 className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
@@ -38,7 +61,7 @@ export default function AboutPage() {
               </Link>
               <Link
                 href="/map"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-200 font-medium"
+                className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2 text-sm font-medium shadow hover:shadow-md transition-all"
               >
                 Start Tracking
               </Link>
