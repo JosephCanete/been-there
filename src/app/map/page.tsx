@@ -21,7 +21,7 @@ export default function MapPage() {
   };
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute showSkeleton={false}>
       <div className="h-screen flex flex-col bg-white">
         {/* Compact Header */}
         <header className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg z-10">

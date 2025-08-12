@@ -76,7 +76,7 @@ export default function AboutPage() {
           <section className="bg-white rounded-2xl p-8 shadow-lg">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">About Me </h1>
             <p className="text-lg text-gray-700 leading-relaxed">
-              I'm a software engineer based in Singapore who loves coding and
+              I am a software engineer based in Singapore who loves coding and
               building useful things. AI helped me to accelerate development and
               refine the experience of this personal project.
             </p>

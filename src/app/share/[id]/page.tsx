@@ -16,7 +16,18 @@ interface SnapshotDoc {
 export default function ShareSnapshotPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params?.id as string | undefined;
+  // Safely resolve and decode the dynamic route id (handles encoded and array forms)
+  const rawIdParam = params?.id as string | string[] | undefined;
+  const idParam = Array.isArray(rawIdParam) ? rawIdParam[0] : rawIdParam;
+  const id = idParam
+    ? (() => {
+        try {
+          return decodeURIComponent(idParam);
+        } catch {
+          return idParam;
+        }
+      })()
+    : undefined;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,10 +132,101 @@ export default function ShareSnapshotPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-blue-700 font-medium">Loading snapshot…</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 py-6 lg:py-10">
+          {/* Header skeleton */}
+          <div className="mb-6">
+            <div className="h-7 w-64 bg-gray-200 rounded animate-pulse mb-2" />
+            <div className="h-4 w-40 bg-gray-100 rounded animate-pulse" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Map card skeleton */}
+            <div className="lg:col-span-3 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+              <div className="relative aspect-[3/4] w-full h-full">
+                <div className="absolute inset-0">
+                  <div
+                    className="w-full h-full rounded-lg shadow-inner overflow-hidden animate-pulse"
+                    style={{
+                      background:
+                        "radial-gradient(1200px 800px at 20% 15%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0) 60%), linear-gradient(135deg, #cfeeff 0%, #aadaff 45%, #8ccfff 100%)",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Pane skeletons */}
+            <div className="lg:col-span-1 space-y-4">
+              {/* CTA card skeleton */}
+              <div className="rounded-xl p-4 lg:p-5 shadow bg-white">
+                <div className="h-5 w-40 bg-gray-200 rounded animate-pulse mb-3" />
+                <div className="h-4 w-full bg-gray-100 rounded animate-pulse mb-2" />
+                <div className="h-4 w-3/4 bg-gray-100 rounded animate-pulse mb-3" />
+                <div className="flex gap-2">
+                  <div className="h-9 flex-1 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-9 w-24 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+
+              {/* Share link card skeleton */}
+              <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-2">
+                <div className="h-4 w-36 bg-gray-200 rounded animate-pulse" />
+                <div className="h-9 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-3 w-32 bg-gray-100 rounded animate-pulse" />
+              </div>
+
+              {/* Progress card skeleton */}
+              <div className="bg-white rounded-xl shadow border border-gray-200 p-4 lg:p-6 space-y-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full bg-gray-100 animate-pulse" />
+                  <div className="flex-1">
+                    <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                    <div className="h-3 w-48 bg-gray-100 rounded animate-pulse mb-2" />
+                    <div className="h-2 w-full bg-gray-100 rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i}>
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-gray-200 animate-pulse" />
+                          <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+                        </div>
+                        <div className="h-4 w-8 bg-gray-100 rounded animate-pulse" />
+                      </div>
+                      <div className="h-2 w-full bg-gray-100 rounded animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+                <div className="h-4 w-40 bg-gray-100 rounded animate-pulse" />
+              </div>
+
+              {/* Achievements card skeleton */}
+              <div className="rounded-xl p-4 lg:p-5 shadow bg-white border border-gray-200 space-y-3">
+                <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="p-3 rounded-lg border border-gray-200"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-gray-100 rounded animate-pulse" />
+                        <div>
+                          <div className="h-4 w-32 bg-gray-100 rounded animate-pulse mb-1" />
+                          <div className="h-3 w-40 bg-gray-100 rounded animate-pulse" />
+                        </div>
+                      </div>
+                      <div className="h-4 w-10 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                    <div className="h-2 w-full bg-gray-100 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -156,7 +258,6 @@ export default function ShareSnapshotPage() {
     snapshot.stats.total > 0
       ? Math.round((visitedTotal / snapshot.stats.total) * 100)
       : 0;
-  const remainingProvinces = Math.max(0, snapshot.stats.total - visitedTotal);
 
   // Category percentages
   const totalProvinces = snapshot.stats.total;

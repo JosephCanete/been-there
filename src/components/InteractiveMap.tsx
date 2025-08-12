@@ -190,12 +190,6 @@ export default function InteractiveMap({
   useEffect(() => {
     const saveData = async () => {
       if (isLoaded && svgContent) {
-        console.log("=== SAVE DEBUG ===");
-        console.log("About to save mapState:", mapState);
-        console.log("User:", user?.uid);
-        console.log("Is loaded:", isLoaded);
-        console.log("Has SVG content:", !!svgContent);
-
         await saveMapState(mapState, user);
 
         const regionMatches = svgContent.match(/id="PH-[^"]+"/g);
@@ -211,10 +205,6 @@ export default function InteractiveMap({
   const handleRegionClick = useCallback(
     (regionId: string) => {
       if (isPanning) return; // Don't click regions while panning
-
-      console.log("=== REGION CLICK DEBUG ===");
-      console.log("Region ID:", regionId);
-      console.log("Current user:", user?.uid);
 
       // Add click feedback
       setClickedRegion(regionId);
@@ -233,7 +223,6 @@ export default function InteractiveMap({
           [regionId]: nextStatus,
         };
 
-        console.log("New map state:", newState);
         return newState;
       });
     },
@@ -574,15 +563,24 @@ export default function InteractiveMap({
     return (
       <div className={`flex flex-col lg:flex-row h-full ${className}`}>
         {/* Map Loading Skeleton */}
-        <div className="flex-1 relative min-h-[50vh] lg:h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 lg:h-16 lg:w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-blue-700 font-medium">
-              Loading Philippine map...
-            </p>
-            <p className="text-blue-600 text-sm mt-1">
-              Preparing your travel tracker
-            </p>
+        <div className="flex-1 relative min-h-[50vh] lg:h-full">
+          <div
+            className="absolute inset-0 w-full h-full"
+            style={{
+              background:
+                "radial-gradient(1200px 800px at 20% 15%, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0) 60%), linear-gradient(135deg, #cfeeff 0%, #aadaff 45%, #8ccfff 100%)",
+            }}
+          >
+            <div className="w-full h-full p-4 lg:p-6">
+              {/* Map viewport skeleton */}
+              <div className="w-full h-full rounded-xl border border-blue-100/60 bg-white/40 shadow-inner animate-pulse" />
+              {/* Zoom controls skeleton */}
+              <div className="absolute top-10 right-10 flex flex-col gap-2">
+                <div className="w-9 h-9 bg-white/70 border border-gray-200 rounded-lg animate-pulse" />
+                <div className="w-9 h-9 bg-white/70 border border-gray-200 rounded-lg animate-pulse" />
+                <div className="w-9 h-9 bg-white/70 border border-gray-200 rounded-lg animate-pulse" />
+              </div>
+            </div>
           </div>
         </div>
 

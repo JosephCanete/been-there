@@ -63,12 +63,64 @@ export default function StatsPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-blue-700 font-medium">
-            Loading your travel statistics...
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          {/* Header skeleton */}
+          <div className="text-center mb-16">
+            <div className="h-9 w-80 bg-gray-200 rounded animate-pulse mx-auto mb-4" />
+            <div className="h-5 w-2/3 bg-gray-100 rounded animate-pulse mx-auto" />
+          </div>
+
+          {/* Main Stats Cards skeleton */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mb-3" />
+                <div className="h-4 w-32 bg-gray-100 rounded animate-pulse mb-3" />
+                <div className="h-2 w-full bg-gray-100 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Detailed Breakdown skeleton */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <div className="bg-white rounded-xl p-8 shadow-lg">
+              <div className="h-7 w-48 bg-gray-200 rounded animate-pulse mb-6" />
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex justify-between items-center">
+                    <div className="h-4 w-40 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-4 w-16 bg-gray-100 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6">
+                <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                  <div className="h-3 w-16 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-3 w-16 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-3 w-16 bg-gray-100 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-8 shadow-lg">
+              <div className="h-7 w-40 bg-gray-200 rounded animate-pulse mb-6" />
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200"
+                  >
+                    <div className="w-8 h-8 bg-gray-100 rounded-full animate-pulse" />
+                    <div>
+                      <div className="h-4 w-40 bg-gray-100 rounded animate-pulse mb-1" />
+                      <div className="h-3 w-48 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
