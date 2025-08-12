@@ -203,9 +203,6 @@ export default function InteractiveMap({
     zoomOut: () => void;
     resetTransform: () => void;
   } | null>(null);
-  const resetView = useCallback(() => {
-    controlsRef.current?.resetTransform();
-  }, []);
 
   // Get region status for styling
   const getRegionStatus = (provinceId: string): VisitStatus => {
