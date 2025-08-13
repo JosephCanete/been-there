@@ -4,6 +4,7 @@ import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 export default function SignIn() {
   const { user, signInWithGoogle, loading } = useAuth();
@@ -20,7 +21,6 @@ export default function SignIn() {
     try {
       setIsSigningIn(true);
       await signInWithGoogle();
-      // Router will redirect automatically via useEffect
     } catch (error) {
       console.error("Sign in failed:", error);
       setIsSigningIn(false);
@@ -44,13 +44,29 @@ export default function SignIn() {
     );
   }
 
+  const fadeUp = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.08 } },
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
       <div className="max-w-md w-full mx-4">
         {/* Logo and Title */}
-        <div className="text-center mb-8">
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="text-center mb-8"
+        >
           <Link href="/" className="inline-flex items-center space-x-3 mb-6">
-            <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full">
+            <motion.div
+              initial={{ rotate: -10, scale: 0.9 }}
+              animate={{ rotate: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 14 }}
+              className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
+            >
               <svg
                 className="w-8 h-8 text-white"
                 fill="currentColor"
@@ -58,18 +74,26 @@ export default function SignIn() {
               >
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
               </svg>
-            </div>
+            </motion.div>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <motion.h1
+            variants={fadeUp}
+            className="text-3xl font-bold text-gray-900 mb-2"
+          >
             Welcome Back!
-          </h1>
-          <p className="text-gray-600">
+          </motion.h1>
+          <motion.p variants={fadeUp} className="text-gray-600">
             Sign in to continue tracking your Philippine adventures
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         {/* Sign In Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bg-white rounded-2xl shadow-xl p-8"
+        >
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -81,7 +105,9 @@ export default function SignIn() {
             </div>
 
             {/* Google Sign In Button */}
-            <button
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleGoogleSignIn}
               disabled={isSigningIn || loading}
               className="w-full flex items-center justify-center px-6 py-4 border border-gray-300 rounded-xl shadow-sm bg-white text-gray-700 font-medium hover:shadow-md hover:border-gray-400 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
@@ -107,7 +133,7 @@ export default function SignIn() {
               <span className="group-hover:text-gray-900 transition-colors">
                 {isSigningIn ? "Signing in..." : "Continue with Google"}
               </span>
-            </button>
+            </motion.button>
 
             {/* Divider */}
             <div className="relative">
@@ -130,7 +156,7 @@ export default function SignIn() {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Back to Home */}
         <div className="text-center mt-8">
@@ -143,55 +169,57 @@ export default function SignIn() {
         </div>
 
         {/* Features Preview */}
-        <div className="mt-12 bg-white/50 backdrop-blur-sm rounded-xl p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-12 bg-white/50 backdrop-blur-sm rounded-xl p-6"
+        >
           <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
             What you&apos;ll get access to:
           </h3>
           <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-blue-600"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
+            {[
+              {
+                iconColor: "text-blue-600",
+                bg: "bg-blue-100",
+                text: "Interactive Philippines map",
+              },
+              {
+                iconColor: "text-green-600",
+                bg: "bg-green-100",
+                text: "Personal travel progress tracking",
+              },
+              {
+                iconColor: "text-purple-600",
+                bg: "bg-purple-100",
+                text: "Detailed statistics and achievements",
+              },
+            ].map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -6 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="flex items-center space-x-3"
+              >
+                <div
+                  className={`w-8 h-8 ${f.bg} rounded-full flex items-center justify-center`}
                 >
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                </svg>
-              </div>
-              <span className="text-sm text-gray-700">
-                Interactive Philippines map
-              </span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <span className="text-sm text-gray-700">
-                Personal travel progress tracking
-              </span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-4 h-4 text-purple-600"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <span className="text-sm text-gray-700">
-                Detailed statistics and achievements
-              </span>
-            </div>
+                  <svg
+                    className={`w-4 h-4 ${f.iconColor}`}
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                  </svg>
+                </div>
+                <span className="text-sm text-gray-700">{f.text}</span>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

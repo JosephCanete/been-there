@@ -6,6 +6,7 @@ import Image from "next/image";
 import InteractiveMap from "@/components/InteractiveMap";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function MapPage() {
   const { user, signOut } = useAuth();
@@ -32,7 +33,16 @@ export default function MapPage() {
                 href="/"
                 className="flex items-center space-x-3 flex-1 min-w-0"
               >
-                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full">
+                <motion.div
+                  initial={{ rotate: -10, scale: 0.9 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 220,
+                    damping: 14,
+                  }}
+                  className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full"
+                >
                   <svg
                     className="w-4 h-4 sm:w-5 sm:h-5 text-white"
                     fill="currentColor"
@@ -40,7 +50,7 @@ export default function MapPage() {
                   >
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                   </svg>
-                </div>
+                </motion.div>
                 <div className="flex-1 min-w-0">
                   <h1 className="text-lg sm:text-xl font-bold text-white truncate">
                     Been There Philippines
@@ -103,12 +113,13 @@ export default function MapPage() {
                       className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white/30"
                     />
                   )}
-                  <button
+                  <motion.button
+                    whileHover={{ y: -1 }}
                     onClick={handleSignOut}
                     className="text-blue-100 hover:text-white transition-colors text-xs sm:text-sm font-medium bg-white/20 px-2 py-1 sm:px-3 sm:py-1 rounded-full"
                   >
                     Sign Out
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>

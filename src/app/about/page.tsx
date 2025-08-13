@@ -1,6 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 export default function AboutPage() {
+  const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.08 } },
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}
@@ -72,8 +81,17 @@ export default function AboutPage() {
 
       {/* About Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="space-y-16">
-          <section className="bg-white rounded-2xl p-8 shadow-lg">
+        <motion.div
+          variants={container}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+          className="space-y-16"
+        >
+          <motion.section
+            variants={fadeUp}
+            className="bg-white rounded-2xl p-8 shadow-lg"
+          >
             <h1 className="text-4xl font-bold text-gray-900 mb-4">About Me </h1>
             <p className="text-lg text-gray-700 leading-relaxed">
               I am a software engineer based in Singapore who loves coding and
@@ -98,9 +116,12 @@ export default function AboutPage() {
                 Connect on LinkedIn
               </a>
             </div>
-          </section>
+          </motion.section>
 
-          <section className="bg-white rounded-2xl p-8 shadow-lg">
+          <motion.section
+            variants={fadeUp}
+            className="bg-white rounded-2xl p-8 shadow-lg"
+          >
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
               How It Works
             </h3>
@@ -143,10 +164,13 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
-          </section>
+          </motion.section>
 
           {/* Status Levels */}
-          <section className="bg-white rounded-2xl p-8 shadow-lg">
+          <motion.section
+            variants={fadeUp}
+            className="bg-white rounded-2xl p-8 shadow-lg"
+          >
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
               Travel Status Levels
             </h3>
@@ -189,10 +213,13 @@ export default function AboutPage() {
                 </div>
               </div>
             </div>
-          </section>
+          </motion.section>
 
           {/* Call to Action */}
-          <section className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-white">
+          <motion.section
+            variants={fadeUp}
+            className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-white"
+          >
             <h3 className="text-3xl font-bold mb-4">Ready to Start Mapping?</h3>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
               Begin documenting your Philippine adventures today. Every journey
@@ -204,8 +231,8 @@ export default function AboutPage() {
             >
               🗺️ Open Interactive Map
             </Link>
-          </section>
-        </div>
+          </motion.section>
+        </motion.div>
       </main>
 
       {/* Footer */}

@@ -13,6 +13,8 @@ import {
 } from "@/utils/mapUtils";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useRouter } from "next/navigation";
+import { buildLevels, getLevelInfo, PRE_LEVEL } from "@/utils/gamification";
+import { motion } from "framer-motion";
 
 export default function StatsPage() {
   const { user, signOut } = useAuth();
@@ -53,108 +55,20 @@ export default function StatsPage() {
   }, [user]);
 
   const completionPercentage = getVisitedPercentage(stats);
-
   const exploredRegions = stats.beenThere + stats.stayedThere + stats.passedBy;
-
-  // Level system: 20 tiers shown as boxes (2 per row)
   const totalProvinces = stats.total || PH_PROV_COUNT;
-  const preLevel = { title: "New Explorer", emoji: "🧭" };
 
-  const requiredList = [
-    1,
-    3,
-    5,
-    8,
-    12,
-    16,
-    20,
-    25,
-    30,
-    35,
-    40,
-    45,
-    50,
-    55,
-    60,
-    65,
-    70,
-    75,
-    80,
-    totalProvinces,
-  ].map((n) => Math.min(n, totalProvinces));
-
-  const levelTitles = [
-    "First Footsteps",
-    "Wanderer",
-    "Trail Trekker",
-    "Town Hopper",
-    "Island Hopper",
-    "Culture Seeker",
-    "Trailblazer",
-    "Road Runner",
-    "Wayfarer",
-    "Scout",
-    "Archipelago Adventurer",
-    "Voyager",
-    "Explorer Elite",
-    "Pathfinder",
-    "Province Pro",
-    "Frontier Ranger",
-    "Navigator",
-    "National Nomad",
-    "Patriotic Pioneer",
-    "PH Master",
-  ];
-
-  const levelEmojis = [
-    "🌱",
-    "🚶",
-    "🥾",
-    "🏘️",
-    "🏝️",
-    "🏛️",
-    "🔥",
-    "🛣️",
-    "🧳",
-    "🛰️",
-    "🚢",
-    "🧭",
-    "⭐",
-    "🗺️",
-    "🛡️",
-    "🏕️",
-    "🧭",
-    "🐾",
-    "🏆",
-    "🇵🇭",
-  ];
-
-  const levels = requiredList.map((required, i) => ({
-    required,
-    title: levelTitles[i] || `Level ${i + 1}`,
-    emoji: levelEmojis[i] || "⭐",
-  }));
-
-  const currentLevelIndex = levels.reduce(
-    (acc, lvl, idx) => (exploredRegions >= lvl.required ? idx : acc),
-    -1
-  );
-  const hasLevel = currentLevelIndex >= 0;
-  const currentLevelNumber = hasLevel ? currentLevelIndex + 1 : 0;
-  const currentLevelMeta = hasLevel
-    ? levels[currentLevelIndex]
-    : { required: 0, title: preLevel.title, emoji: preLevel.emoji };
-  const nextLevelMeta = levels[currentLevelIndex + 1];
-  const nextRequired = nextLevelMeta?.required ?? currentLevelMeta.required;
-  const prevRequired = hasLevel ? currentLevelMeta.required : 0;
-  const toNext = Math.max(0, nextRequired - exploredRegions);
-  const levelProgress = nextLevelMeta
-    ? Math.round(
-        ((exploredRegions - prevRequired) /
-          Math.max(1, nextRequired - prevRequired)) *
-          100
-      )
-    : 100;
+  // Gamification info
+  const {
+    levels,
+    currentLevelNumber,
+    currentLevelMeta,
+    nextLevelMeta,
+    nextRequired,
+    prevRequired,
+    toNext,
+    levelProgress,
+  } = getLevelInfo(exploredRegions, totalProvinces);
 
   if (!isLoaded) {
     return (
@@ -220,6 +134,13 @@ export default function StatsPage() {
       </div>
     );
   }
+
+  // Animation helpers
+  const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
+  const container = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.08 } },
+  };
 
   return (
     <ProtectedRoute>
@@ -287,63 +208,126 @@ export default function StatsPage() {
 
         {/* Stats Content */}
         <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="text-center mb-16"
+          >
+            <motion.h2
+              variants={fadeUp}
+              className="text-4xl font-bold text-gray-900 mb-6"
+            >
               Your Travel Statistics
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            </motion.h2>
+            <motion.p
+              variants={fadeUp}
+              className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+            >
               Detailed insights into your Philippine adventure progress and
               exploration journey.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
           {/* Main Stats Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div className="bg-white rounded-xl p-6 shadow-lg text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {completionPercentage}%
-              </div>
-              <div className="text-gray-600 font-medium">Overall Progress</div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                <div
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-1000"
-                  style={{ width: `${completionPercentage}%` }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg text-center">
-              <div className="text-3xl font-bold text-green-600 mb-2">
-                {stats.beenThere}
-              </div>
-              <div className="text-gray-600 font-medium">Been There</div>
-              <div className="text-sm text-gray-500 mt-1">
-                Provinces Visited
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {stats.stayedThere}
-              </div>
-              <div className="text-gray-600 font-medium">Visited</div>
-              <div className="text-sm text-gray-500 mt-1">Extended Visits</div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg text-center">
-              <div className="text-3xl font-bold text-red-600 mb-2">
-                {stats.passedBy}
-              </div>
-              <div className="text-gray-600 font-medium">Lived</div>
-              <div className="text-sm text-gray-500 mt-1">Transit Points</div>
-            </div>
-          </div>
+          <motion.div
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+          >
+            {[
+              {
+                key: "overall",
+                content: (
+                  <div className="bg-white rounded-xl p-6 shadow-lg text-center">
+                    <div className="text-3xl font-bold text-blue-600 mb-2">
+                      {completionPercentage}%
+                    </div>
+                    <div className="text-gray-600 font-medium">
+                      Overall Progress
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-3 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${completionPercentage}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.9, ease: "easeOut" }}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full"
+                      />
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: "beenThere",
+                content: (
+                  <div className="bg-white rounded-xl p-6 shadow-lg text-center">
+                    <div className="text-3xl font-bold text-green-600 mb-2">
+                      {stats.beenThere}
+                    </div>
+                    <div className="text-gray-600 font-medium">Been There</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Provinces Visited
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: "visited",
+                content: (
+                  <div className="bg-white rounded-xl p-6 shadow-lg text-center">
+                    <div className="text-3xl font-bold text-blue-600 mb-2">
+                      {stats.stayedThere}
+                    </div>
+                    <div className="text-gray-600 font-medium">Visited</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Extended Visits
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: "lived",
+                content: (
+                  <div className="bg-white rounded-xl p-6 shadow-lg text-center">
+                    <div className="text-3xl font-bold text-red-600 mb-2">
+                      {stats.passedBy}
+                    </div>
+                    <div className="text-gray-600 font-medium">Lived</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Transit Points
+                    </div>
+                  </div>
+                ),
+              },
+            ].map((card) => (
+              <motion.div
+                variants={fadeUp}
+                whileHover={{ y: -4 }}
+                key={card.key}
+              >
+                {card.content}
+              </motion.div>
+            ))}
+          </motion.div>
 
           {/* Merged: Your Level + Progress Breakdown + Achievements */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            className="bg-white rounded-2xl p-8 shadow-lg mb-12"
+          >
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Your Level */}
-              <div className="flex-1">
+              <motion.div
+                className="flex-1"
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
                 <div className="p-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex items-center justify-between">
                   <div>
                     <div className="text-xs uppercase tracking-wider opacity-90">
@@ -356,7 +340,14 @@ export default function StatsPage() {
                       {exploredRegions}/{totalProvinces} provinces explored
                     </div>
                   </div>
-                  <div className="text-5xl">{currentLevelMeta.emoji}</div>
+                  <motion.div
+                    initial={{ rotate: -10, scale: 0.9 }}
+                    whileInView={{ rotate: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 14 }}
+                    className="text-5xl"
+                  >
+                    {currentLevelMeta.emoji}
+                  </motion.div>
                 </div>
                 {nextLevelMeta ? (
                   <div className="mt-4">
@@ -367,10 +358,13 @@ export default function StatsPage() {
                       </span>
                       <span>{levelProgress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 h-2 rounded-full">
-                      <div
-                        className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-700"
-                        style={{ width: `${levelProgress}%` }}
+                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${levelProgress}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.9, ease: "easeOut" }}
+                        className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500"
                       />
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
@@ -383,10 +377,15 @@ export default function StatsPage() {
                     Max level reached — legend status unlocked!
                   </div>
                 )}
-              </div>
+              </motion.div>
 
               {/* Progress Breakdown */}
-              <div className="flex-1">
+              <motion.div
+                className="flex-1"
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
                 <div className="rounded-2xl border border-gray-200 p-5 bg-gray-50 h-full">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">
                     Progress Breakdown
@@ -416,38 +415,47 @@ export default function StatsPage() {
                       <span>Progress</span>
                       <span>{exploredRegions} provinces</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <div className="flex h-3 rounded-full overflow-hidden">
-                        <div
-                          className="bg-green-500"
-                          style={{
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{
                             width: `${
                               stats.total > 0
                                 ? (stats.beenThere / stats.total) * 100
                                 : 0
                             }%`,
                           }}
-                        ></div>
-                        <div
-                          className="bg-blue-500"
-                          style={{
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.8 }}
+                          className="bg-green-500"
+                        />
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{
                             width: `${
                               stats.total > 0
                                 ? (stats.stayedThere / stats.total) * 100
                                 : 0
                             }%`,
                           }}
-                        ></div>
-                        <div
-                          className="bg-yellow-500"
-                          style={{
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.9, delay: 0.05 }}
+                          className="bg-blue-500"
+                        />
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{
                             width: `${
                               stats.total > 0
                                 ? (stats.passedBy / stats.total) * 100
                                 : 0
                             }%`,
                           }}
-                        ></div>
+                          viewport={{ once: true }}
+                          transition={{ duration: 1, delay: 0.1 }}
+                          className="bg-yellow-500"
+                        />
                       </div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -457,14 +465,20 @@ export default function StatsPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Achievements grid */}
             <h3 className="text-2xl font-bold text-gray-900 mt-8 mb-4">
               Achievements
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+            <motion.div
+              variants={container}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.15 }}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4"
+            >
               {levels.map((lvl, idx) => {
                 const unlocked = exploredRegions >= lvl.required;
                 const prev = idx > 0 ? levels[idx - 1].required : 0;
@@ -476,9 +490,10 @@ export default function StatsPage() {
                       100
                   )
                 );
-
                 return (
-                  <div
+                  <motion.div
+                    variants={fadeUp}
+                    whileHover={{ y: -3 }}
                     key={idx}
                     className={`p-4 rounded-xl border ${
                       unlocked
@@ -504,26 +519,34 @@ export default function StatsPage() {
                         {lvl.emoji}
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 h-1.5 rounded-full mt-3">
-                      <div
+                    <div className="w-full bg-gray-200 h-1.5 rounded-full mt-3 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${progress}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.7 }}
                         className={`h-1.5 rounded-full ${
                           unlocked ? "bg-green-500" : "bg-gray-400"
                         }`}
-                        style={{ width: `${progress}%` }}
                       />
                     </div>
                     <div className="text-xs text-gray-700 mt-1">
                       {Math.min(exploredRegions, lvl.required)}/{lvl.required}
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Call to Action */}
           {exploredRegions === 0 ? (
-            <div className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-white">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-white"
+            >
               <h3 className="text-3xl font-bold mb-4">
                 Ready to Start Your Journey?
               </h3>
@@ -537,9 +560,14 @@ export default function StatsPage() {
               >
                 🗺️ Start Tracking Now
               </Link>
-            </div>
+            </motion.div>
           ) : completionPercentage < 100 ? (
-            <div className="text-center bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl p-12 text-white">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl p-12 text-white"
+            >
               <h3 className="text-3xl font-bold mb-4">Keep Exploring!</h3>
               <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
                 You&apos;ve explored {exploredRegions} provinces so far. There
@@ -551,9 +579,14 @@ export default function StatsPage() {
               >
                 🚀 Continue Exploring
               </Link>
-            </div>
+            </motion.div>
           ) : (
-            <div className="text-center bg-gradient-to-r from-yellow-500 to-red-500 rounded-2xl p-12 text-white">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center bg-gradient-to-r from-yellow-500 to-red-500 rounded-2xl p-12 text-white"
+            >
               <h3 className="text-3xl font-bold mb-4">Congratulations! 🎉</h3>
               <p className="text-xl text-yellow-100 mb-8 max-w-2xl mx-auto">
                 Amazing! You&apos;ve explored all provinces of the Philippines.
@@ -565,7 +598,7 @@ export default function StatsPage() {
               >
                 🏆 View Your Complete Map
               </Link>
-            </div>
+            </motion.div>
           )}
         </main>
 

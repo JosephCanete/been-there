@@ -15,6 +15,7 @@ import {
 import CopyButton from "@/components/CopyButton";
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
+import { getLevelInfo, PRE_LEVEL } from "@/utils/gamification";
 
 interface SnapshotDoc {
   mapState: MapState;
@@ -316,97 +317,16 @@ export default function ShareByUsernamePage() {
   const pctPassed = pct(snapshot.stats.passedBy);
   const pctNot = pct(snapshot.stats.notVisited);
 
-  // Level badge (same thresholds as stats page)
-  const preLevel = { title: "New Explorer", emoji: "🧭", required: 0 };
-  const requiredList = [
-    1,
-    3,
-    5,
-    8,
-    12,
-    16,
-    20,
-    25,
-    30,
-    35,
-    40,
-    45,
-    50,
-    55,
-    60,
-    65,
-    70,
-    75,
-    80,
-    totalProvinces,
-  ].map((n) => Math.min(n, totalProvinces));
-  const levelTitles = [
-    "First Footsteps",
-    "Wanderer",
-    "Trail Trekker",
-    "Town Hopper",
-    "Island Hopper",
-    "Culture Seeker",
-    "Trailblazer",
-    "Road Runner",
-    "Wayfarer",
-    "Scout",
-    "Archipelago Adventurer",
-    "Voyager",
-    "Explorer Elite",
-    "Pathfinder",
-    "Province Pro",
-    "Frontier Ranger",
-    "Navigator",
-    "National Nomad",
-    "Patriotic Pioneer",
-    "Philippines Master",
-  ];
-  const levelEmojis = [
-    "🌱",
-    "🚶",
-    "🥾",
-    "🏘️",
-    "🏝️",
-    "🏛️",
-    "🔥",
-    "🛣️",
-    "🧳",
-    "🛰️",
-    "🚢",
-    "🧭",
-    "⭐",
-    "🗺️",
-    "🛡️",
-    "🏕️",
-    "🧭",
-    "🐾",
-    "🏆",
-    "🇵🇭",
-  ];
-  const levels = requiredList.map((required, i) => ({
-    required,
-    title: levelTitles[i] || `Level ${i + 1}`,
-    emoji: levelEmojis[i] || "⭐",
-  }));
-  const currentLevelIndex = levels.reduce(
-    (acc, lvl, idx) => (visitedTotal >= lvl.required ? idx : acc),
-    -1
-  );
-  const hasLevel = currentLevelIndex >= 0;
-  const currentLevelNumber = hasLevel ? currentLevelIndex + 1 : 0;
-  const currentLevelMeta = hasLevel ? levels[currentLevelIndex] : preLevel;
-  const nextLevelMeta = levels[currentLevelIndex + 1];
-  const prevRequired = hasLevel ? currentLevelMeta.required : 0;
-  const nextRequired = nextLevelMeta?.required ?? currentLevelMeta.required;
-  const toNext = Math.max(0, nextRequired - visitedTotal);
-  const levelProgress = nextLevelMeta
-    ? Math.round(
-        ((visitedTotal - prevRequired) /
-          Math.max(1, nextRequired - prevRequired)) *
-          100
-      )
-    : 100;
+  // Level badge info shared via utils
+  const {
+    currentLevelNumber,
+    currentLevelMeta,
+    nextLevelMeta,
+    nextRequired,
+    prevRequired,
+    toNext,
+    levelProgress,
+  } = getLevelInfo(visitedTotal, totalProvinces);
 
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
