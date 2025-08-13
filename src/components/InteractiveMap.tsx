@@ -13,7 +13,6 @@ import {
   getStrokeColor,
 } from "@/utils/mapUtils";
 import { useAuth } from "./AuthProvider";
-import MapLegend from "./MapLegend";
 import MapStatsDisplay from "./MapStats";
 import MapSnapshot from "./MapSnapshot";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
@@ -652,7 +651,6 @@ export default function InteractiveMap({
         <div className="flex-1 overflow-y-auto">
           <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
             <MapStatsDisplay stats={stats} />
-            <MapLegend />
             {/* Instructions */}
           </div>
         </div>

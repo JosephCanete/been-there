@@ -28,7 +28,10 @@ export default function MapPage() {
           <div className="px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between gap-2">
               {/* Left: Brand + Title */}
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <Link
+                href="/"
+                className="flex items-center space-x-3 flex-1 min-w-0"
+              >
                 <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full">
                   <svg
                     className="w-4 h-4 sm:w-5 sm:h-5 text-white"
@@ -47,7 +50,7 @@ export default function MapPage() {
                     {user?.displayName?.split(" ")[0] || "Explorer"}!
                   </p>
                 </div>
-              </div>
+              </Link>
 
               {/* Right: Nav + (desktop) user actions */}
               <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
