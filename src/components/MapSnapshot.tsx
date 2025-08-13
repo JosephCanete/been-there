@@ -63,12 +63,25 @@ export default function MapSnapshot({
         setShareError("Please sign in to create a shareable link.");
         return;
       }
-      // Reuse existing by deterministic doc id per user+state
+      // 1:1 mapping: one snapshot document per user (doc id = user.uid)
       const stateHash = computeStateHash();
-      const docId = `${user.uid}-${stateHash}`;
+      const docId = user.uid;
       const ref = doc(db, "snapshots", docId);
       const existing = await getDoc(ref);
-      if (!existing.exists()) {
+      if (existing.exists()) {
+        await setDoc(
+          ref,
+          {
+            mapState,
+            stats,
+            stateHash,
+            userDisplayName: user?.displayName ?? null,
+            userId: user.uid,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } else {
         await setDoc(ref, {
           mapState,
           stats,
