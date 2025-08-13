@@ -3,9 +3,53 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/components/AuthProvider";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function LandingPage() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const router = useRouter();
+  const [checkingUsername, setCheckingUsername] = useState(true);
+
+  // If logged in and no username yet, force onboarding even on /
+  useEffect(() => {
+    const run = async () => {
+      if (loading) return;
+      if (!user) {
+        setCheckingUsername(false);
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, "profiles", user.uid));
+        const username = snap.exists() ? (snap.data() as any)?.username : null;
+        if (!username) {
+          router.replace("/onboarding");
+          return;
+        }
+      } catch (e) {
+        router.replace("/onboarding");
+        return;
+      } finally {
+        setCheckingUsername(false);
+      }
+    };
+    run();
+  }, [user, loading, router]);
+
+  if (loading || checkingUsername) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center px-6">
+        <div
+          className="h-10 w-10 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"
+          aria-label="Loading"
+          role="status"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}

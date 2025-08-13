@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapState, MapStats } from "@/types/map";
 import { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
@@ -31,6 +31,26 @@ export default function MapSnapshot({
   const [isSharing, setIsSharing] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+
+  // Load username for friendly URLs
+  useEffect(() => {
+    const run = async () => {
+      if (!user) {
+        setUsername(null);
+        return;
+      }
+      try {
+        const profileRef = doc(db, "profiles", user.uid);
+        const snap = await getDoc(profileRef);
+        const u = (snap.exists() && (snap.data() as any)?.username) || null;
+        setUsername(typeof u === "string" && u.length > 0 ? u : null);
+      } catch (e) {
+        setUsername(null);
+      }
+    };
+    run();
+  }, [user]);
 
   // Create a deterministic hash for the snapshot content
   const computeStateHash = (): string => {
@@ -91,9 +111,9 @@ export default function MapSnapshot({
           createdAt: serverTimestamp(),
         });
       }
-      const url = `${window.location.origin}/share/${encodeURIComponent(
-        docId
-      )}`;
+      const url = username
+        ? `${window.location.origin}/${encodeURIComponent(username)}/share`
+        : `${window.location.origin}/share/${encodeURIComponent(docId)}`;
       setShareUrl(url);
       try {
         await navigator.clipboard.writeText(url);
