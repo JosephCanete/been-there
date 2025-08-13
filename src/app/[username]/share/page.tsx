@@ -13,6 +13,8 @@ import {
   percentOf,
 } from "@/utils/mapUtils";
 import CopyButton from "@/components/CopyButton";
+import { useAuth } from "@/components/AuthProvider";
+import Link from "next/link";
 
 interface SnapshotDoc {
   mapState: MapState;
@@ -24,6 +26,7 @@ interface SnapshotDoc {
 export default function ShareByUsernamePage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const username = (params?.username as string) || "";
   const [uid, setUid] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SnapshotDoc | null>(null);
@@ -164,48 +167,6 @@ export default function ShareByUsernamePage() {
       console.error("Failed to generate PNG:", e);
       return null;
     }
-  };
-
-  const shareAsPost = async (
-    platform: "facebook" | "twitter" | "threads" | "instagram"
-  ) => {
-    const url = getCurrentUrl();
-    const text = getShareText();
-
-    if (platform === "facebook") {
-      openCentered(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-          url
-        )}`
-      );
-      return;
-    }
-    if (platform === "twitter") {
-      openCentered(
-        `https://twitter.com/intent/tweet?url=${encodeURIComponent(
-          url
-        )}&text=${encodeURIComponent(text)}`
-      );
-      return;
-    }
-    if (platform === "threads") {
-      const threadsIntent = `https://www.threads.net/intent/post?text=${encodeURIComponent(
-        `${text} ${url}`
-      )}`;
-      openCentered(threadsIntent);
-      return;
-    }
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Been There Philippines", text, url });
-      } else {
-        await navigator.clipboard.writeText(`${text} ${url}`);
-        setShareMessage(
-          "Link copied. Open Instagram and paste into a new post."
-        );
-        setTimeout(() => setShareMessage(null), 3000);
-      }
-    } catch {}
   };
 
   const shareAsStory = async (platform: "facebook" | "instagram") => {
@@ -360,6 +321,14 @@ export default function ShareByUsernamePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 py-6 lg:py-10">
+        <div className="mb-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-lg text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 rounded"
+          >
+            <span>Home</span>
+          </Link>
+        </div>
         <div className="mb-6">
           <h1 className="text-2xl capitalize lg:text-3xl font-bold text-gray-800">
             {username}'s Philippine Map Snapshot
@@ -405,86 +374,52 @@ export default function ShareByUsernamePage() {
             </div>
 
             {/* Social share card */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-3">
+            <div className="bg-white rounded-xl shadow border border-gray-200 p-5 space-y-4">
               <h3 className="text-sm font-semibold text-gray-800">
-                Share on social
+                Share social
               </h3>
+              <p className="text-xs text-gray-500">
+                Create an image of your map and share it as a Story.
+              </p>
               <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-500">Post</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => shareAsPost("facebook")}
-                    className="px-3 py-2 rounded bg-[#1877F2] text-white text-xs font-semibold hover:brightness-110"
-                  >
-                    Facebook
-                  </button>
-                  <button
-                    onClick={() => shareAsPost("twitter")}
-                    className="px-3 py-2 rounded bg-black text-white text-xs font-semibold hover:brightness-110"
-                  >
-                    X / Twitter
-                  </button>
-                  <button
-                    onClick={() => shareAsPost("instagram")}
-                    className="px-3 py-2 rounded bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white text-xs font-semibold hover:brightness-110"
-                  >
-                    Instagram
-                  </button>
-                  <button
-                    onClick={() => shareAsPost("threads")}
-                    className="px-3 py-2 rounded bg-white border text-black text-xs font-semibold hover:bg-gray-50"
-                  >
-                    Threads
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-500">Story</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => shareAsStory("instagram")}
-                    disabled={isGeneratingImage}
-                    className="px-3 py-2 rounded bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white text-xs font-semibold hover:brightness-110 disabled:opacity-70"
-                  >
-                    Instagram Story
-                  </button>
-                  <button
-                    onClick={() => shareAsStory("facebook")}
-                    disabled={isGeneratingImage}
-                    className="px-3 py-2 rounded bg-[#1877F2] text-white text-xs font-semibold hover:brightness-110 disabled:opacity-70"
-                  >
-                    Facebook Story
-                  </button>
-                </div>
+                <button
+                  onClick={() => shareAsStory("instagram")}
+                  disabled={isGeneratingImage}
+                  className="w-full px-4 py-2.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold shadow-sm hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-70"
+                >
+                  Share social
+                </button>
                 <button
                   onClick={downloadImage}
                   disabled={isGeneratingImage}
-                  className="w-full px-3 py-2 rounded border text-xs font-medium hover:bg-gray-50 disabled:opacity-70"
+                  className="w-full px-4 py-2.5 rounded-md border text-xs text-black font-medium hover:bg-gray-50 disabled:opacity-70"
                 >
-                  {isGeneratingImage
-                    ? "Preparing image…"
-                    : "Download snapshot image"}
+                  {isGeneratingImage ? "Preparing image…" : "Download image"}
                 </button>
                 {shareMessage && (
                   <div className="text-xs text-gray-600">{shareMessage}</div>
                 )}
+                <div className="text-[11px] text-gray-400">
+                  Tip: Works best on mobile.
+                </div>
               </div>
             </div>
 
             {/* Try it yourself CTA */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white shadow">
-              <h3 className="text-sm font-semibold">Make your own map</h3>
-              <p className="text-xs text-white/90 mt-1">
-                Mark where you’ve been and share your progress with friends.
-              </p>
-              <button
-                onClick={() => router.push("/")}
-                className="mt-3 w-full px-3 py-2 rounded bg-white text-blue-700 text-xs font-semibold hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/70"
-              >
-                Try it yourself
-              </button>
-            </div>
-
+            {!user && (
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white shadow">
+                <h3 className="text-sm font-semibold">Make your own map</h3>
+                <p className="text-xs text-white/90 mt-1">
+                  Mark where you’ve been and share your progress with friends.
+                </p>
+                <button
+                  onClick={() => router.push("/")}
+                  className="mt-3 w-full px-3 py-2 rounded bg-white text-blue-700 text-xs font-semibold hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/70"
+                >
+                  Try it yourself
+                </button>
+              </div>
+            )}
             {/* Progress card */}
             <div className="bg-white rounded-xl shadow border border-gray-200 p-4 lg:p-6 space-y-5">
               <div className="flex items-center gap-4">
