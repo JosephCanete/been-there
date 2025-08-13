@@ -56,6 +56,106 @@ export default function StatsPage() {
 
   const exploredRegions = stats.beenThere + stats.stayedThere + stats.passedBy;
 
+  // Level system: 20 tiers shown as boxes (2 per row)
+  const totalProvinces = stats.total || PH_PROV_COUNT;
+  const preLevel = { title: "New Explorer", emoji: "🧭" };
+
+  const requiredList = [
+    1,
+    3,
+    5,
+    8,
+    12,
+    16,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75,
+    80,
+    totalProvinces,
+  ].map((n) => Math.min(n, totalProvinces));
+
+  const levelTitles = [
+    "First Footsteps",
+    "Wanderer",
+    "Trail Trekker",
+    "Town Hopper",
+    "Island Hopper",
+    "Culture Seeker",
+    "Trailblazer",
+    "Road Runner",
+    "Wayfarer",
+    "Scout",
+    "Archipelago Adventurer",
+    "Voyager",
+    "Explorer Elite",
+    "Pathfinder",
+    "Province Pro",
+    "Frontier Ranger",
+    "Navigator",
+    "National Nomad",
+    "Patriotic Pioneer",
+    "PH Master",
+  ];
+
+  const levelEmojis = [
+    "🌱",
+    "🚶",
+    "🥾",
+    "🏘️",
+    "🏝️",
+    "🏛️",
+    "🔥",
+    "🛣️",
+    "🧳",
+    "🛰️",
+    "🚢",
+    "🧭",
+    "⭐",
+    "🗺️",
+    "🛡️",
+    "🏕️",
+    "🧭",
+    "🐾",
+    "🏆",
+    "🇵🇭",
+  ];
+
+  const levels = requiredList.map((required, i) => ({
+    required,
+    title: levelTitles[i] || `Level ${i + 1}`,
+    emoji: levelEmojis[i] || "⭐",
+  }));
+
+  const currentLevelIndex = levels.reduce(
+    (acc, lvl, idx) => (exploredRegions >= lvl.required ? idx : acc),
+    -1
+  );
+  const hasLevel = currentLevelIndex >= 0;
+  const currentLevelNumber = hasLevel ? currentLevelIndex + 1 : 0;
+  const currentLevelMeta = hasLevel
+    ? levels[currentLevelIndex]
+    : { required: 0, title: preLevel.title, emoji: preLevel.emoji };
+  const nextLevelMeta = levels[currentLevelIndex + 1];
+  const nextRequired = nextLevelMeta?.required ?? currentLevelMeta.required;
+  const prevRequired = hasLevel ? currentLevelMeta.required : 0;
+  const toNext = Math.max(0, nextRequired - exploredRegions);
+  const levelProgress = nextLevelMeta
+    ? Math.round(
+        ((exploredRegions - prevRequired) /
+          Math.max(1, nextRequired - prevRequired)) *
+          100
+      )
+    : 100;
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -239,208 +339,185 @@ export default function StatsPage() {
             </div>
           </div>
 
-          {/* Detailed Breakdown */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            {/* Progress Breakdown */}
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Progress Breakdown
-              </h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Provinces Explored</span>
-                  <span className="font-bold text-gray-900">
-                    {exploredRegions} / {stats.total}
-                  </span>
+          {/* Merged: Your Level + Progress Breakdown + Achievements */}
+          <div className="bg-white rounded-2xl p-8 shadow-lg mb-12">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Your Level */}
+              <div className="flex-1">
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex items-center justify-between">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider opacity-90">
+                      Your Level
+                    </div>
+                    <div className="text-2xl font-extrabold">
+                      Level {currentLevelNumber}: {currentLevelMeta.title}
+                    </div>
+                    <div className="text-xs mt-1 opacity-90">
+                      {exploredRegions}/{totalProvinces} provinces explored
+                    </div>
+                  </div>
+                  <div className="text-5xl">{currentLevelMeta.emoji}</div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Provinces Remaining</span>
-                  <span className="font-bold text-gray-900">
-                    {stats.notVisited}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Exploration Rate</span>
-                  <span className="font-bold text-gray-900">
-                    {completionPercentage}%
-                  </span>
-                </div>
+                {nextLevelMeta ? (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs text-gray-600 mb-2">
+                      <span>
+                        Next: Level {currentLevelNumber + 1} •{" "}
+                        {nextLevelMeta.title} ({nextRequired} provinces)
+                      </span>
+                      <span>{levelProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 h-2 rounded-full">
+                      <div
+                        className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-700"
+                        style={{ width: `${levelProgress}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {toNext} more province{toNext === 1 ? "" : "s"} to reach
+                      the next level
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 text-green-700 bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                    Max level reached — legend status unlocked!
+                  </div>
+                )}
               </div>
 
-              {/* Visual Progress Bar */}
-              <div className="mt-6">
-                <div className="flex justify-between text-sm text-gray-600 mb-2">
-                  <span>Progress</span>
-                  <span>{exploredRegions} provinces</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-4">
-                  <div className="flex h-4 rounded-full overflow-hidden">
-                    <div
-                      className="bg-green-500"
-                      style={{
-                        width: `${
-                          stats.total > 0
-                            ? (stats.beenThere / stats.total) * 100
-                            : 0
-                        }%`,
-                      }}
-                    ></div>
-                    <div
-                      className="bg-blue-500"
-                      style={{
-                        width: `${
-                          stats.total > 0
-                            ? (stats.stayedThere / stats.total) * 100
-                            : 0
-                        }%`,
-                      }}
-                    ></div>
-                    <div
-                      className="bg-yellow-500"
-                      style={{
-                        width: `${
-                          stats.total > 0
-                            ? (stats.passedBy / stats.total) * 100
-                            : 0
-                        }%`,
-                      }}
-                    ></div>
+              {/* Progress Breakdown */}
+              <div className="flex-1">
+                <div className="rounded-2xl border border-gray-200 p-5 bg-gray-50 h-full">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    Progress Breakdown
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Provinces Explored</span>
+                      <span className="font-bold text-gray-900">
+                        {exploredRegions} / {stats.total}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Provinces Remaining</span>
+                      <span className="font-bold text-gray-900">
+                        {stats.notVisited}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Exploration Rate</span>
+                      <span className="font-bold text-gray-900">
+                        {completionPercentage}%
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Been There</span>
-                  <span>Visited</span>
-                  <span>Lived</span>
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs text-gray-600 mb-2">
+                      <span>Progress</span>
+                      <span>{exploredRegions} provinces</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div className="flex h-3 rounded-full overflow-hidden">
+                        <div
+                          className="bg-green-500"
+                          style={{
+                            width: `${
+                              stats.total > 0
+                                ? (stats.beenThere / stats.total) * 100
+                                : 0
+                            }%`,
+                          }}
+                        ></div>
+                        <div
+                          className="bg-blue-500"
+                          style={{
+                            width: `${
+                              stats.total > 0
+                                ? (stats.stayedThere / stats.total) * 100
+                                : 0
+                            }%`,
+                          }}
+                        ></div>
+                        <div
+                          className="bg-yellow-500"
+                          style={{
+                            width: `${
+                              stats.total > 0
+                                ? (stats.passedBy / stats.total) * 100
+                                : 0
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>Been There</span>
+                      <span>Visited</span>
+                      <span>Lived</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Achievement Badges */}
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Achievements
-              </h3>
-              <div className="space-y-4">
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-lg ${
-                    exploredRegions >= 1
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-gray-50 border border-gray-200"
-                  }`}
-                >
-                  <div
-                    className={`text-2xl ${
-                      exploredRegions >= 1 ? "" : "grayscale"
-                    }`}
-                  >
-                    🌟
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      First Explorer
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Visit your first province
-                    </div>
-                  </div>
-                </div>
+            {/* Achievements grid */}
+            <h3 className="text-2xl font-bold text-gray-900 mt-8 mb-4">
+              Achievements
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+              {levels.map((lvl, idx) => {
+                const unlocked = exploredRegions >= lvl.required;
+                const prev = idx > 0 ? levels[idx - 1].required : 0;
+                const progress = Math.min(
+                  100,
+                  Math.round(
+                    ((Math.min(exploredRegions, lvl.required) - prev) /
+                      Math.max(1, lvl.required - prev)) *
+                      100
+                  )
+                );
 
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-lg ${
-                    exploredRegions >= 5
-                      ? "bg-blue-50 border border-blue-200"
-                      : "bg-gray-50 border border-gray-200"
-                  }`}
-                >
+                return (
                   <div
-                    className={`text-2xl ${
-                      exploredRegions >= 5 ? "" : "grayscale"
+                    key={idx}
+                    className={`p-4 rounded-xl border ${
+                      unlocked
+                        ? "bg-green-50 border-green-200"
+                        : "bg-gray-50 border-gray-200"
                     }`}
                   >
-                    🗺️
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      Provincial Explorer
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-xs text-gray-500">
+                          Level {idx + 1}
+                        </div>
+                        <div className="font-semibold text-gray-900">
+                          {lvl.title}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Reach {lvl.required} provinces
+                        </div>
+                      </div>
+                      <div
+                        className={`text-3xl ${unlocked ? "" : "grayscale"}`}
+                      >
+                        {lvl.emoji}
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      Explore 5 provinces ({Math.min(exploredRegions, 5)}/5)
+                    <div className="w-full bg-gray-200 h-1.5 rounded-full mt-3">
+                      <div
+                        className={`h-1.5 rounded-full ${
+                          unlocked ? "bg-green-500" : "bg-gray-400"
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      />
                     </div>
-                  </div>
-                </div>
-
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-lg ${
-                    exploredRegions >= 10
-                      ? "bg-purple-50 border border-purple-200"
-                      : "bg-gray-50 border border-gray-200"
-                  }`}
-                >
-                  <div
-                    className={`text-2xl ${
-                      exploredRegions >= 10 ? "" : "grayscale"
-                    }`}
-                  >
-                    🏝️
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      Island Hopper
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Explore 10 provinces ({Math.min(exploredRegions, 10)}/10)
+                    <div className="text-xs text-gray-700 mt-1">
+                      {Math.min(exploredRegions, lvl.required)}/{lvl.required}
                     </div>
                   </div>
-                </div>
-
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-lg ${
-                    completionPercentage >= 50
-                      ? "bg-yellow-50 border border-yellow-200"
-                      : "bg-gray-50 border border-gray-200"
-                  }`}
-                >
-                  <div
-                    className={`text-2xl ${
-                      completionPercentage >= 50 ? "" : "grayscale"
-                    }`}
-                  >
-                    🏆
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      Halfway Hero
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Reach 50% completion ({completionPercentage}%)
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-lg ${
-                    completionPercentage >= 100
-                      ? "bg-red-50 border border-red-200"
-                      : "bg-gray-50 border border-gray-200"
-                  }`}
-                >
-                  <div
-                    className={`text-2xl ${
-                      completionPercentage >= 100 ? "" : "grayscale"
-                    }`}
-                  >
-                    🇵🇭
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      Philippines Master
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Complete all provinces (100%)
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
 
@@ -470,7 +547,7 @@ export default function StatsPage() {
               </p>
               <Link
                 href="/map"
-                className="bg-white text-green-600 px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all duration-200 transform hover:scale-105 inline-block"
+                className="bg-white text-green-600 px-8 py-4 rounded-full text-lg font-semibold hover:shadow- xl transition-all duration-200 transform hover:scale-105 inline-block"
               >
                 🚀 Continue Exploring
               </Link>
@@ -484,7 +561,7 @@ export default function StatsPage() {
               </p>
               <Link
                 href="/map"
-                className="bg-white text-yellow-600 px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all duration-200 transform hover:scale-105 inline-block"
+                className="bg-white text-yellow-600 px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all duration-200 transform hover:scale-105 inline-block"
               >
                 🏆 View Your Complete Map
               </Link>

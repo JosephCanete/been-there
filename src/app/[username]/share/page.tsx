@@ -316,6 +316,98 @@ export default function ShareByUsernamePage() {
   const pctPassed = pct(snapshot.stats.passedBy);
   const pctNot = pct(snapshot.stats.notVisited);
 
+  // Level badge (same thresholds as stats page)
+  const preLevel = { title: "New Explorer", emoji: "🧭", required: 0 };
+  const requiredList = [
+    1,
+    3,
+    5,
+    8,
+    12,
+    16,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75,
+    80,
+    totalProvinces,
+  ].map((n) => Math.min(n, totalProvinces));
+  const levelTitles = [
+    "First Footsteps",
+    "Wanderer",
+    "Trail Trekker",
+    "Town Hopper",
+    "Island Hopper",
+    "Culture Seeker",
+    "Trailblazer",
+    "Road Runner",
+    "Wayfarer",
+    "Scout",
+    "Archipelago Adventurer",
+    "Voyager",
+    "Explorer Elite",
+    "Pathfinder",
+    "Province Pro",
+    "Frontier Ranger",
+    "Navigator",
+    "National Nomad",
+    "Patriotic Pioneer",
+    "Philippines Master",
+  ];
+  const levelEmojis = [
+    "🌱",
+    "🚶",
+    "🥾",
+    "🏘️",
+    "🏝️",
+    "🏛️",
+    "🔥",
+    "🛣️",
+    "🧳",
+    "🛰️",
+    "🚢",
+    "🧭",
+    "⭐",
+    "🗺️",
+    "🛡️",
+    "🏕️",
+    "🧭",
+    "🐾",
+    "🏆",
+    "🇵🇭",
+  ];
+  const levels = requiredList.map((required, i) => ({
+    required,
+    title: levelTitles[i] || `Level ${i + 1}`,
+    emoji: levelEmojis[i] || "⭐",
+  }));
+  const currentLevelIndex = levels.reduce(
+    (acc, lvl, idx) => (visitedTotal >= lvl.required ? idx : acc),
+    -1
+  );
+  const hasLevel = currentLevelIndex >= 0;
+  const currentLevelNumber = hasLevel ? currentLevelIndex + 1 : 0;
+  const currentLevelMeta = hasLevel ? levels[currentLevelIndex] : preLevel;
+  const nextLevelMeta = levels[currentLevelIndex + 1];
+  const prevRequired = hasLevel ? currentLevelMeta.required : 0;
+  const nextRequired = nextLevelMeta?.required ?? currentLevelMeta.required;
+  const toNext = Math.max(0, nextRequired - visitedTotal);
+  const levelProgress = nextLevelMeta
+    ? Math.round(
+        ((visitedTotal - prevRequired) /
+          Math.max(1, nextRequired - prevRequired)) *
+          100
+      )
+    : 100;
+
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   return (
@@ -353,7 +445,44 @@ export default function ShareByUsernamePage() {
             </div>
           </div>
           <div className="lg:col-span-1 lg:sticky lg:top-6 self-start space-y-4">
-            {/* Share link card */}
+            {/* Current badge card */}
+            <div className="bg-white rounded-xl shadow border border-gray-200 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-gray-500">
+                    Current Badge
+                  </div>
+                  <div className="text-lg font-extrabold text-gray-900">
+                    Level {currentLevelNumber}: {currentLevelMeta.title}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {visitedTotal}/{totalProvinces} provinces explored
+                  </div>
+                </div>
+                <div className="text-4xl">{currentLevelMeta.emoji}</div>
+              </div>
+              {nextLevelMeta ? (
+                <div className="mt-3">
+                  <div className="flex justify-between text-[11px] text-gray-600 mb-1">
+                    <span>
+                      Next: Lv {currentLevelNumber + 1} • {nextLevelMeta.title}
+                    </span>
+                    <span>{levelProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 h-1.5 rounded-full">
+                    <div
+                      className="h-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500"
+                      style={{ width: `${levelProgress}%` }}
+                    />
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-1">
+                    {toNext} more province{toNext === 1 ? "" : "s"} to level up
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Share this snapshot */}
             <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-2">
               <h3 className="text-sm font-semibold text-gray-800">
                 Share this snapshot
