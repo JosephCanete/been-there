@@ -333,20 +333,6 @@ export default function ShareByUsernamePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 py-6 lg:py-10">
-        <div className="mb-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-lg text-blue-600 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40 rounded"
-          >
-            <span>Home</span>
-          </Link>
-        </div>
-        <div className="mb-6">
-          <h1 className="text-2xl capitalize lg:text-3xl font-bold text-gray-800">
-            {username}'s Philippine Map Snapshot
-          </h1>
-          <p className="text-gray-600">Shared progress permalink</p>
-        </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
             <div className="relative aspect-[3/4] w-full h-full">
@@ -366,8 +352,13 @@ export default function ShareByUsernamePage() {
           </div>
           <div className="lg:col-span-1 lg:sticky lg:top-6 self-start space-y-4">
             {/* Current badge card */}
+
             <div className="bg-white rounded-xl shadow border border-gray-200 p-5">
-              <div className="flex items-center justify-between">
+              <h2 className="text-lg capitalize font-semibold text-gray-800">
+                {username}'s Philippine Map
+              </h2>
+
+              <div className="flex mt-2 items-center justify-between">
                 <div>
                   <div className="text-xs uppercase tracking-wider text-gray-500">
                     Current Badge
