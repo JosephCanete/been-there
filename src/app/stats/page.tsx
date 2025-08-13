@@ -5,7 +5,12 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { MapStats } from "@/types/map";
-import { loadMapState, calculateMapStats } from "@/utils/mapUtils";
+import {
+  loadMapState,
+  calculateMapStats,
+  PH_PROV_COUNT,
+  getVisitedPercentage,
+} from "@/utils/mapUtils";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useRouter } from "next/navigation";
 
@@ -33,11 +38,8 @@ export default function StatsPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Load map state from the new system
         const mapState = await loadMapState(user);
-
-        // Calculate stats using the existing utility
-        const calculatedStats = calculateMapStats(mapState, 82); // 82 provinces in Philippines
+        const calculatedStats = calculateMapStats(mapState, PH_PROV_COUNT);
 
         setStats(calculatedStats);
         setIsLoaded(true);
@@ -50,14 +52,7 @@ export default function StatsPage() {
     loadStats();
   }, [user]);
 
-  const completionPercentage =
-    stats.total > 0
-      ? Math.round(
-          ((stats.beenThere + stats.stayedThere + stats.passedBy) /
-            stats.total) *
-            100
-        )
-      : 0;
+  const completionPercentage = getVisitedPercentage(stats);
 
   const exploredRegions = stats.beenThere + stats.stayedThere + stats.passedBy;
 

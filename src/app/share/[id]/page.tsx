@@ -5,6 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { MapState, MapStats, VisitStatus } from "@/types/map";
+import {
+  getFillColor,
+  getStrokeColor,
+  getVisitedPercentage,
+  getVisitedTotal,
+  percentOf,
+} from "@/utils/mapUtils";
 
 interface SnapshotDoc {
   mapState: MapState;
@@ -34,33 +41,8 @@ export default function ShareSnapshotPage() {
   const [snapshot, setSnapshot] = useState<SnapshotDoc | null>(null);
   const [svgContent, setSvgContent] = useState<string>("");
 
-  // Colors (keep in sync with main map)
-  const getFillColor = (status: VisitStatus): string => {
-    switch (status) {
-      case "been-there":
-        return "#10b981";
-      case "stayed-there":
-        return "#3b82f6";
-      case "passed-by":
-        return "#dc2626";
-      case "not-visited":
-      default:
-        return "#d1d5db";
-    }
-  };
-  const getStrokeColor = (status: VisitStatus): string => {
-    switch (status) {
-      case "been-there":
-        return "#047857";
-      case "stayed-there":
-        return "#1d4ed8";
-      case "passed-by":
-        return "#b91c1c";
-      case "not-visited":
-      default:
-        return "#6b7280";
-    }
-  };
+  // Colors (from utils)
+  // getFillColor / getStrokeColor imported
 
   useEffect(() => {
     const run = async () => {
@@ -250,19 +232,12 @@ export default function ShareSnapshotPage() {
     );
   }
 
-  const visitedTotal =
-    snapshot.stats.beenThere +
-    snapshot.stats.stayedThere +
-    snapshot.stats.passedBy;
-  const visitedPercentage =
-    snapshot.stats.total > 0
-      ? Math.round((visitedTotal / snapshot.stats.total) * 100)
-      : 0;
+  const visitedTotal = getVisitedTotal(snapshot.stats);
+  const visitedPercentage = getVisitedPercentage(snapshot.stats);
 
   // Category percentages
   const totalProvinces = snapshot.stats.total;
-  const pct = (v: number) =>
-    totalProvinces > 0 ? Math.round((v / totalProvinces) * 100) : 0;
+  const pct = (v: number) => percentOf(v, totalProvinces);
   const pctBeen = pct(snapshot.stats.beenThere);
   const pctStayed = pct(snapshot.stats.stayedThere);
   const pctPassed = pct(snapshot.stats.passedBy);
@@ -547,9 +522,7 @@ export default function ShareSnapshotPage() {
                 {/* First Explorer */}
                 <div
                   className="p-3 rounded-lg border"
-                  style={{
-                    borderColor: achievedFirst ? "#10b981" : "#e5e7eb",
-                  }}
+                  style={{ borderColor: achievedFirst ? "#10b981" : "#e5e7eb" }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -587,9 +560,7 @@ export default function ShareSnapshotPage() {
                 {/* Provincial Explorer */}
                 <div
                   className="p-3 rounded-lg border"
-                  style={{
-                    borderColor: achieved5 ? "#3b82f6" : "#e5e7eb",
-                  }}
+                  style={{ borderColor: achieved5 ? "#3b82f6" : "#e5e7eb" }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -627,9 +598,7 @@ export default function ShareSnapshotPage() {
                 {/* Island Hopper */}
                 <div
                   className="p-3 rounded-lg border"
-                  style={{
-                    borderColor: achieved10 ? "#8b5cf6" : "#e5e7eb",
-                  }}
+                  style={{ borderColor: achieved10 ? "#8b5cf6" : "#e5e7eb" }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -667,9 +636,7 @@ export default function ShareSnapshotPage() {
                 {/* Halfway Hero */}
                 <div
                   className="p-3 rounded-lg border"
-                  style={{
-                    borderColor: achieved50 ? "#f59e0b" : "#e5e7eb",
-                  }}
+                  style={{ borderColor: achieved50 ? "#f59e0b" : "#e5e7eb" }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

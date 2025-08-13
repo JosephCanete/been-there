@@ -1,7 +1,12 @@
 "use client";
 
 import { VisitStatus } from "@/types/map";
-import { getStatusLabel, getStatusColor } from "@/utils/mapUtils";
+import {
+  getStatusLabel,
+  getStatusColor,
+  getFillColor,
+  getStrokeColor,
+} from "@/utils/mapUtils";
 
 interface MapLegendProps {
   className?: string;
@@ -25,16 +30,12 @@ export default function MapLegend({ className = "" }: MapLegendProps) {
         {statuses.map((status) => (
           <div key={status} className="flex items-center space-x-3">
             <div
-              className={`w-4 h-4 rounded-sm border-2 ${
-                status === "been-there"
-                  ? "bg-green-500 border-green-700"
-                  : status === "stayed-there"
-                  ? "bg-blue-500 border-blue-700"
-                  : status === "passed-by"
-                  ? "bg-yellow-500 border-yellow-700"
-                  : "bg-gray-300 border-gray-500"
-              }`}
+              className="w-4 h-4 rounded-sm border-2"
               aria-hidden="true"
+              style={{
+                backgroundColor: getFillColor(status),
+                borderColor: getStrokeColor(status),
+              }}
             />
             <span
               className={`text-sm font-medium px-2 py-1 rounded ${getStatusColor(

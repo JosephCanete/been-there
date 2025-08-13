@@ -6,6 +6,8 @@ import {
   migrateLocalStorageToFirestore,
 } from "@/lib/firestore";
 
+export const PH_PROV_COUNT = 82;
+
 const STORAGE_KEY = "philippine-map-visits";
 
 /**
@@ -168,7 +170,7 @@ export const getStatusLabel = (status: VisitStatus): string => {
 };
 
 /**
- * Get status color for UI elements
+ * Get status color for UI elements (utility classes)
  */
 export const getStatusColor = (status: VisitStatus): string => {
   switch (status) {
@@ -183,3 +185,48 @@ export const getStatusColor = (status: VisitStatus): string => {
       return "text-gray-600 bg-gray-100";
   }
 };
+
+/**
+ * Shared color helpers for map regions (fill/stroke)
+ */
+export const getFillColor = (status: VisitStatus): string => {
+  switch (status) {
+    case "been-there":
+      return "#10b981"; // green-500
+    case "stayed-there":
+      return "#3b82f6"; // blue-500
+    case "passed-by":
+      return "#dc2626"; // red-600
+    case "not-visited":
+    default:
+      return "#d1d5db"; // gray-300
+  }
+};
+
+export const getStrokeColor = (status: VisitStatus): string => {
+  switch (status) {
+    case "been-there":
+      return "#047857"; // green-700
+    case "stayed-there":
+      return "#1d4ed8"; // blue-700
+    case "passed-by":
+      return "#b91c1c"; // red-700
+    case "not-visited":
+    default:
+      return "#6b7280"; // gray-500
+  }
+};
+
+/**
+ * Percentage & progress helpers
+ */
+export const getVisitedTotal = (stats: MapStats): number =>
+  stats.beenThere + stats.stayedThere + stats.passedBy;
+
+export const getVisitedPercentage = (stats: MapStats): number =>
+  stats.total > 0
+    ? Math.round((getVisitedTotal(stats) / stats.total) * 100)
+    : 0;
+
+export const percentOf = (value: number, total: number): number =>
+  total > 0 ? Math.round((value / total) * 100) : 0;

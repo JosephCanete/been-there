@@ -9,6 +9,8 @@ import {
   getNextVisitStatus,
   getStatusLabel,
   handleAuthStateChange,
+  getFillColor,
+  getStrokeColor,
 } from "@/utils/mapUtils";
 import { useAuth } from "./AuthProvider";
 import MapLegend from "./MapLegend";
@@ -33,6 +35,8 @@ export default function InteractiveMap({
   const [clickedRegion, setClickedRegion] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [svgContent, setSvgContent] = useState<string>("");
+  // Province ids we count for stats (derived from SVG PH-* ids)
+  const [validProvinceIds, setValidProvinceIds] = useState<string[]>([]);
   const [stats, setStats] = useState<MapStats>({
     beenThere: 0,
     stayedThere: 0,
@@ -55,18 +59,32 @@ export default function InteractiveMap({
       try {
         const response = await fetch("/philippines.svg");
         const svgText = await response.text();
-        setSvgContent(svgText);
+        // Normalize some outdated province names in title attributes for display
+        const normalizedSvgText = svgText.replace(
+          /title="Compostela Valley"/g,
+          'title="Davao de Oro"'
+        );
+        setSvgContent(normalizedSvgText);
 
-        // Count regions from SVG
-        const regionMatches = svgText.match(/id="PH-[^"]+"/g);
-        const regionCount = regionMatches ? regionMatches.length : 0;
+        // Derive province ids we count (PH-* only) and region count from SVG
+        const phMatches = normalizedSvgText.match(/id="PH-[^"]+"/g) || [];
+        const ids = phMatches
+          .map((m) => m.match(/id="([^"]+)"/)?.[1])
+          .filter(Boolean) as string[];
+        setValidProvinceIds(ids);
+        const regionCount = ids.length;
 
         // Load saved state using auth state
         console.log("Loading map state for user:", user?.uid || "guest");
         const savedState = await handleAuthStateChange(user);
         console.log("Loaded map state:", savedState);
         setMapState(savedState);
-        setStats(calculateMapStats(savedState, regionCount));
+        // Calculate stats based on SVG-derived total and ids only
+        const filteredForStats = Object.fromEntries(
+          Object.entries(savedState).filter(([k]) => ids.includes(k))
+        ) as MapState;
+        setStats(calculateMapStats(filteredForStats, regionCount));
+        console.log(`Using SVG region count ${regionCount} for stats.`);
         setIsLoaded(true);
       } catch (error) {
         console.error("Error loading Philippines SVG:", error);
@@ -189,17 +207,19 @@ export default function InteractiveMap({
   // Save state whenever mapState changes
   useEffect(() => {
     const saveData = async () => {
-      if (isLoaded && svgContent) {
+      if (isLoaded && svgContent && validProvinceIds.length > 0) {
         await saveMapState(mapState, user);
-
-        const regionMatches = svgContent.match(/id="PH-[^"]+"/g);
-        const regionCount = regionMatches ? regionMatches.length : 0;
-        setStats(calculateMapStats(mapState, regionCount));
+        // Use SVG-derived ids and total for stats
+        const regionCount = validProvinceIds.length;
+        const filteredForStats = Object.fromEntries(
+          Object.entries(mapState).filter(([k]) => validProvinceIds.includes(k))
+        ) as MapState;
+        setStats(calculateMapStats(filteredForStats, regionCount));
       }
     };
 
     saveData();
-  }, [mapState, isLoaded, svgContent, user]);
+  }, [mapState, isLoaded, svgContent, user, validProvinceIds]);
 
   // Handle region click - cycle through visit statuses
   const handleRegionClick = useCallback(
@@ -266,36 +286,6 @@ export default function InteractiveMap({
     return titleMatch ? titleMatch[1] : provinceId.replace("PH-", "");
   };
 
-  // Get fill color based on status
-  const getFillColor = (status: VisitStatus): string => {
-    switch (status) {
-      case "been-there":
-        return "#10b981"; // green-500
-      case "stayed-there":
-        return "#3b82f6"; // blue-500
-      case "passed-by":
-        return "#dc2626"; // red-600
-      case "not-visited":
-      default:
-        return "#d1d5db"; // gray-300
-    }
-  };
-
-  // Get stroke color based on status
-  const getStrokeColor = (status: VisitStatus): string => {
-    switch (status) {
-      case "been-there":
-        return "#047857"; // green-700
-      case "stayed-there":
-        return "#1d4ed8"; // blue-700
-      case "passed-by":
-        return "#b91c1c"; // red-700
-      case "not-visited":
-      default:
-        return "#6b7280"; // gray-500
-    }
-  };
-
   // Render interactive SVG
   const renderInteractiveSVG = () => {
     if (!svgContent) return null;
@@ -308,7 +298,14 @@ export default function InteractiveMap({
     if (!svgElement) return null;
 
     // Get all path elements (regions)
-    const paths = Array.from(svgElement.querySelectorAll('path[id^="PH-"]'));
+    const paths = Array.from(
+      svgElement.querySelectorAll('path[id^="PH-"], path[id^="PH_"]')
+    );
+    if (validProvinceIds.length && paths.length !== validProvinceIds.length) {
+      console.warn(
+        `Map SVG provinces (${paths.length}) do not match counted total (${validProvinceIds.length}).`
+      );
+    }
 
     return (
       <div
