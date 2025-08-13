@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import type { MapState, MapStats, VisitStatus } from "@/types/map";
@@ -12,6 +12,7 @@ import {
   getVisitedTotal,
   percentOf,
 } from "@/utils/mapUtils";
+import CopyButton from "@/components/CopyButton";
 
 interface SnapshotDoc {
   mapState: MapState;
@@ -29,6 +30,9 @@ export default function ShareByUsernamePage() {
   const [svgContent, setSvgContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const svgHostRef = useRef<HTMLDivElement | null>(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -98,6 +102,164 @@ export default function ShareByUsernamePage() {
       </svg>
     );
   }, [svgContent, snapshot]);
+
+  // Helpers (share links and image generation)
+  const getCurrentUrl = () =>
+    (typeof window !== "undefined" && window.location.href) || "";
+  const getShareText = () =>
+    `${username}'s Philippines travel progress — check it out!`;
+
+  const openCentered = (url: string) => {
+    const w = 900;
+    const h = 700;
+    const y = window.top ? (window.top.outerHeight - h) / 2 : 50;
+    const x = window.top ? (window.top.outerWidth - w) / 2 : 50;
+    window.open(
+      url,
+      "_blank",
+      `toolbar=0,location=0,menubar=0,width=${w},height=${h},top=${y},left=${x}`
+    );
+  };
+
+  const generatePngBlob = async (): Promise<Blob | null> => {
+    try {
+      const host = svgHostRef.current;
+      if (!host) return null;
+      const svg = host.querySelector("svg");
+      if (!svg) return null;
+      const viewBox = svg.getAttribute("viewBox") || "0 0 770 1250";
+      const [, , vw, vh] = viewBox.split(" ").map(Number);
+      const targetWidth = 1080;
+      const scale = targetWidth / (vw || 770);
+      const width = Math.round((vw || 770) * scale);
+      const height = Math.round((vh || 1250) * scale);
+
+      const serialized = new XMLSerializer().serializeToString(svg);
+      const svg64 =
+        "data:image/svg+xml;charset=utf-8," + encodeURIComponent(serialized);
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      const blob: Blob = await new Promise((resolve, reject) => {
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("No 2D context"));
+          ctx.fillStyle = "#e6f2ff";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (b) => (b ? resolve(b) : reject(new Error("toBlob"))),
+            "image/png",
+            0.95
+          );
+        };
+        img.onerror = reject;
+        img.src = svg64;
+      });
+      return blob;
+    } catch (e) {
+      console.error("Failed to generate PNG:", e);
+      return null;
+    }
+  };
+
+  const shareAsPost = async (
+    platform: "facebook" | "twitter" | "threads" | "instagram"
+  ) => {
+    const url = getCurrentUrl();
+    const text = getShareText();
+
+    if (platform === "facebook") {
+      openCentered(
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+          url
+        )}`
+      );
+      return;
+    }
+    if (platform === "twitter") {
+      openCentered(
+        `https://twitter.com/intent/tweet?url=${encodeURIComponent(
+          url
+        )}&text=${encodeURIComponent(text)}`
+      );
+      return;
+    }
+    if (platform === "threads") {
+      const threadsIntent = `https://www.threads.net/intent/post?text=${encodeURIComponent(
+        `${text} ${url}`
+      )}`;
+      openCentered(threadsIntent);
+      return;
+    }
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Been There Philippines", text, url });
+      } else {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        setShareMessage(
+          "Link copied. Open Instagram and paste into a new post."
+        );
+        setTimeout(() => setShareMessage(null), 3000);
+      }
+    } catch {}
+  };
+
+  const shareAsStory = async (platform: "facebook" | "instagram") => {
+    try {
+      setIsGeneratingImage(true);
+      const blob = await generatePngBlob();
+      if (!blob) {
+        setShareMessage("Could not generate image. Try downloading instead.");
+        setTimeout(() => setShareMessage(null), 3000);
+        return;
+      }
+      const file = new File([blob], "btp-snapshot.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Been There Philippines",
+          text: getShareText(),
+        });
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "btp-snapshot.png";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        setShareMessage(
+          `Image downloaded. Open ${
+            platform === "instagram" ? "Instagram" : "Facebook"
+          } and upload to your Story.`
+        );
+        setTimeout(() => setShareMessage(null), 4000);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const downloadImage = async () => {
+    setIsGeneratingImage(true);
+    const blob = await generatePngBlob();
+    if (blob) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "btp-snapshot.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    }
+    setIsGeneratingImage(false);
+  };
 
   if (loading) {
     return (
@@ -199,7 +361,7 @@ export default function ShareByUsernamePage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 py-6 lg:py-10">
         <div className="mb-6">
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">
+          <h1 className="text-2xl capitalize lg:text-3xl font-bold text-gray-800">
             {username}'s Philippine Map Snapshot
           </h1>
           <p className="text-gray-600">Shared progress permalink</p>
@@ -209,6 +371,7 @@ export default function ShareByUsernamePage() {
             <div className="relative aspect-[3/4] w-full h-full">
               <div className="absolute inset-0 ">
                 <div
+                  ref={svgHostRef}
                   className="w-full h-full rounded-lg shadow-inner overflow-hidden"
                   style={{
                     background:
@@ -221,6 +384,7 @@ export default function ShareByUsernamePage() {
             </div>
           </div>
           <div className="lg:col-span-1 lg:sticky lg:top-6 self-start space-y-4">
+            {/* Share link card */}
             <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-2">
               <h3 className="text-sm font-semibold text-gray-800">
                 Share this snapshot
@@ -231,14 +395,97 @@ export default function ShareByUsernamePage() {
                   value={currentUrl}
                   readOnly
                 />
-                <button
-                  onClick={() => navigator.clipboard.writeText(currentUrl)}
-                  className="px-3 py-2 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  Copy
-                </button>
+                <CopyButton
+                  text={currentUrl}
+                  className="px-3 py-2 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-70"
+                  initialLabel="Copy"
+                  copiedLabel="Copied"
+                />
               </div>
             </div>
+
+            {/* Social share card */}
+            <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-800">
+                Share on social
+              </h3>
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-gray-500">Post</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => shareAsPost("facebook")}
+                    className="px-3 py-2 rounded bg-[#1877F2] text-white text-xs font-semibold hover:brightness-110"
+                  >
+                    Facebook
+                  </button>
+                  <button
+                    onClick={() => shareAsPost("twitter")}
+                    className="px-3 py-2 rounded bg-black text-white text-xs font-semibold hover:brightness-110"
+                  >
+                    X / Twitter
+                  </button>
+                  <button
+                    onClick={() => shareAsPost("instagram")}
+                    className="px-3 py-2 rounded bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white text-xs font-semibold hover:brightness-110"
+                  >
+                    Instagram
+                  </button>
+                  <button
+                    onClick={() => shareAsPost("threads")}
+                    className="px-3 py-2 rounded bg-white border text-black text-xs font-semibold hover:bg-gray-50"
+                  >
+                    Threads
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-gray-500">Story</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => shareAsStory("instagram")}
+                    disabled={isGeneratingImage}
+                    className="px-3 py-2 rounded bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 text-white text-xs font-semibold hover:brightness-110 disabled:opacity-70"
+                  >
+                    Instagram Story
+                  </button>
+                  <button
+                    onClick={() => shareAsStory("facebook")}
+                    disabled={isGeneratingImage}
+                    className="px-3 py-2 rounded bg-[#1877F2] text-white text-xs font-semibold hover:brightness-110 disabled:opacity-70"
+                  >
+                    Facebook Story
+                  </button>
+                </div>
+                <button
+                  onClick={downloadImage}
+                  disabled={isGeneratingImage}
+                  className="w-full px-3 py-2 rounded border text-xs font-medium hover:bg-gray-50 disabled:opacity-70"
+                >
+                  {isGeneratingImage
+                    ? "Preparing image…"
+                    : "Download snapshot image"}
+                </button>
+                {shareMessage && (
+                  <div className="text-xs text-gray-600">{shareMessage}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Try it yourself CTA */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-4 text-white shadow">
+              <h3 className="text-sm font-semibold">Make your own map</h3>
+              <p className="text-xs text-white/90 mt-1">
+                Mark where you’ve been and share your progress with friends.
+              </p>
+              <button
+                onClick={() => router.push("/")}
+                className="mt-3 w-full px-3 py-2 rounded bg-white text-blue-700 text-xs font-semibold hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white/70"
+              >
+                Try it yourself
+              </button>
+            </div>
+
+            {/* Progress card */}
             <div className="bg-white rounded-xl shadow border border-gray-200 p-4 lg:p-6 space-y-5">
               <div className="flex items-center gap-4">
                 <div className="relative w-20 h-20 lg:w-24 lg:h-24 shrink-0">

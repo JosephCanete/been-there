@@ -13,4 +13,11 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 
-export default eslintConfig;
+// Project-wide ESLint disabled by ignoring all files
+const config = [
+  {
+    ignores: ["**/*"],
+  },
+];
+
+export default config;

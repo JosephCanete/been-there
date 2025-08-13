@@ -6,6 +6,7 @@ import { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { serverTimestamp, doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "./AuthProvider";
+import CopyButton from "./CopyButton";
 
 interface MapSnapshotProps {
   mapState: MapState;
@@ -186,12 +187,12 @@ export default function MapSnapshot({
                 value={shareUrl}
                 readOnly
               />
-              <button
-                onClick={() => navigator.clipboard.writeText(shareUrl)}
+              <CopyButton
+                text={shareUrl}
                 className="px-2 py-2 text-xs rounded bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Copy
-              </button>
+                initialLabel="Copy"
+                copiedLabel="Copied"
+              />
             </div>
           </div>
         )}
