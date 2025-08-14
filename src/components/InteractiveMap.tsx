@@ -628,17 +628,13 @@ export default function InteractiveMap({
           />
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto hidden lg:block">
           <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
             <MapStatsDisplay stats={stats} />
-            {/* Instructions */}
           </div>
         </div>
 
-        {/* Footer with Snapshot and Reset Button (desktop only) */}
         <div className="p-3 lg:p-6 border-t border-gray-200 bg-gray-50 space-y-3 hidden lg:block">
-          {/* Snapshot Button */}
           <MapSnapshot
             mapState={mapState}
             stats={stats}

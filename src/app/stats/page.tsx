@@ -70,6 +70,22 @@ export default function StatsPage() {
     levelProgress,
   } = getLevelInfo(exploredRegions, totalProvinces);
 
+  // Disable animations on small screens or when user prefers reduced motion
+  const [disableAnims, setDisableAnims] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mqReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mqNarrow = window.matchMedia("(max-width: 640px)");
+    const update = () => setDisableAnims(mqReduce.matches || mqNarrow.matches);
+    update();
+    mqReduce.addEventListener("change", update);
+    mqNarrow.addEventListener("change", update);
+    return () => {
+      mqReduce.removeEventListener("change", update);
+      mqNarrow.removeEventListener("change", update);
+    };
+  }, []);
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -148,7 +164,8 @@ export default function StatsPage() {
         {/* Navigation */}
         <nav className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 py-3 sm:py-4">
+              {/* Brand link */}
               <Link href="/" className="flex items-center space-x-3">
                 <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full">
                   <svg
@@ -165,7 +182,9 @@ export default function StatsPage() {
                   </h1>
                 </div>
               </Link>
-              <div className="flex items-center space-x-6">
+
+              {/* Navigation links */}
+              <div className="flex items-center flex-wrap gap-3 sm:gap-4">
                 <Link
                   href="/"
                   className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
@@ -184,6 +203,8 @@ export default function StatsPage() {
                 >
                   View Map
                 </Link>
+
+                {/* User menu */}
                 <div className="flex items-center space-x-3">
                   {user?.photoURL && (
                     <Image
@@ -207,22 +228,23 @@ export default function StatsPage() {
         </nav>
 
         {/* Stats Content */}
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+          {/* Header */}
           <motion.div
             variants={container}
-            initial="hidden"
-            animate="show"
-            className="text-center mb-16"
+            initial={disableAnims ? undefined : "hidden"}
+            animate={disableAnims ? undefined : "show"}
+            className="text-center mb-12 sm:mb-16"
           >
             <motion.h2
               variants={fadeUp}
-              className="text-4xl font-bold text-gray-900 mb-6"
+              className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 sm:mb-6"
             >
               Your Travel Statistics
             </motion.h2>
             <motion.p
               variants={fadeUp}
-              className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+              className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
             >
               Detailed insights into your Philippine adventure progress and
               exploration journey.
@@ -232,10 +254,9 @@ export default function StatsPage() {
           {/* Main Stats Cards */}
           <motion.div
             variants={container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+            initial={disableAnims ? undefined : "hidden"}
+            animate={disableAnims ? undefined : "show"}
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10 sm:mb-12"
           >
             {[
               {
@@ -250,10 +271,22 @@ export default function StatsPage() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-3 overflow-hidden">
                       <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${completionPercentage}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.9, ease: "easeOut" }}
+                        initial={disableAnims ? undefined : { width: 0 }}
+                        animate={
+                          disableAnims
+                            ? undefined
+                            : { width: `${completionPercentage}%` }
+                        }
+                        transition={
+                          disableAnims
+                            ? undefined
+                            : { duration: 0.9, ease: "easeOut" }
+                        }
+                        style={
+                          disableAnims
+                            ? { width: `${completionPercentage}%` }
+                            : undefined
+                        }
                         className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full"
                       />
                     </div>
@@ -313,20 +346,18 @@ export default function StatsPage() {
             ))}
           </motion.div>
 
-          {/* Merged: Your Level + Progress Breakdown + Achievements */}
+          {/* Level + Breakdown + Achievements */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            className="bg-white rounded-2xl p-8 shadow-lg mb-12"
+            initial={disableAnims ? undefined : { opacity: 0, y: 12 }}
+            animate={disableAnims ? undefined : { opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl p-5 sm:p-8 shadow-lg mb-12"
           >
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col lg:flex-row gap-5 sm:gap-6">
               {/* Your Level */}
               <motion.div
                 className="flex-1"
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                initial={disableAnims ? undefined : { opacity: 0, y: 12 }}
+                animate={disableAnims ? undefined : { opacity: 1, y: 0 }}
               >
                 <div className="p-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex items-center justify-between">
                   <div>
@@ -360,10 +391,22 @@ export default function StatsPage() {
                     </div>
                     <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                       <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${levelProgress}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.9, ease: "easeOut" }}
+                        initial={disableAnims ? undefined : { width: 0 }}
+                        animate={
+                          disableAnims
+                            ? undefined
+                            : { width: `${levelProgress}%` }
+                        }
+                        transition={
+                          disableAnims
+                            ? undefined
+                            : { duration: 0.9, ease: "easeOut" }
+                        }
+                        style={
+                          disableAnims
+                            ? { width: `${levelProgress}%` }
+                            : undefined
+                        }
                         className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-blue-500"
                       />
                     </div>
@@ -382,9 +425,8 @@ export default function StatsPage() {
               {/* Progress Breakdown */}
               <motion.div
                 className="flex-1"
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                initial={disableAnims ? undefined : { opacity: 0, y: 12 }}
+                animate={disableAnims ? undefined : { opacity: 1, y: 0 }}
               >
                 <div className="rounded-2xl border border-gray-200 p-5 bg-gray-50 h-full">
                   <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -418,42 +460,94 @@ export default function StatsPage() {
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <div className="flex h-3 rounded-full overflow-hidden">
                         <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{
-                            width: `${
-                              stats.total > 0
-                                ? (stats.beenThere / stats.total) * 100
-                                : 0
-                            }%`,
-                          }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.8 }}
+                          initial={disableAnims ? undefined : { width: 0 }}
+                          animate={
+                            disableAnims
+                              ? undefined
+                              : {
+                                  width: `${
+                                    stats.total > 0
+                                      ? (stats.beenThere / stats.total) * 100
+                                      : 0
+                                  }%`,
+                                }
+                          }
+                          transition={
+                            disableAnims ? undefined : { duration: 0.8 }
+                          }
+                          style={
+                            disableAnims
+                              ? {
+                                  width: `${
+                                    stats.total > 0
+                                      ? (stats.beenThere / stats.total) * 100
+                                      : 0
+                                  }%`,
+                                }
+                              : undefined
+                          }
                           className="bg-green-500"
                         />
                         <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{
-                            width: `${
-                              stats.total > 0
-                                ? (stats.stayedThere / stats.total) * 100
-                                : 0
-                            }%`,
-                          }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.9, delay: 0.05 }}
+                          initial={disableAnims ? undefined : { width: 0 }}
+                          animate={
+                            disableAnims
+                              ? undefined
+                              : {
+                                  width: `${
+                                    stats.total > 0
+                                      ? (stats.stayedThere / stats.total) * 100
+                                      : 0
+                                  }%`,
+                                }
+                          }
+                          transition={
+                            disableAnims
+                              ? undefined
+                              : { duration: 0.9, delay: 0.05 }
+                          }
+                          style={
+                            disableAnims
+                              ? {
+                                  width: `${
+                                    stats.total > 0
+                                      ? (stats.stayedThere / stats.total) * 100
+                                      : 0
+                                  }%`,
+                                }
+                              : undefined
+                          }
                           className="bg-blue-500"
                         />
                         <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{
-                            width: `${
-                              stats.total > 0
-                                ? (stats.passedBy / stats.total) * 100
-                                : 0
-                            }%`,
-                          }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 1, delay: 0.1 }}
+                          initial={disableAnims ? undefined : { width: 0 }}
+                          animate={
+                            disableAnims
+                              ? undefined
+                              : {
+                                  width: `${
+                                    stats.total > 0
+                                      ? (stats.passedBy / stats.total) * 100
+                                      : 0
+                                  }%`,
+                                }
+                          }
+                          transition={
+                            disableAnims
+                              ? undefined
+                              : { duration: 1, delay: 0.1 }
+                          }
+                          style={
+                            disableAnims
+                              ? {
+                                  width: `${
+                                    stats.total > 0
+                                      ? (stats.passedBy / stats.total) * 100
+                                      : 0
+                                  }%`,
+                                }
+                              : undefined
+                          }
                           className="bg-yellow-500"
                         />
                       </div>
@@ -474,32 +568,54 @@ export default function StatsPage() {
             </h3>
             <motion.div
               variants={container}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.15 }}
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4"
+              initial={disableAnims ? undefined : "hidden"}
+              animate={disableAnims ? undefined : "show"}
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
             >
               {levels.map((lvl, idx) => {
-                const unlocked = exploredRegions >= lvl.required;
-                const prev = idx > 0 ? levels[idx - 1].required : 0;
+                const prevStrict = (() => {
+                  for (let j = idx - 1; j >= 0; j--) {
+                    if (levels[j].required < lvl.required)
+                      return levels[j].required;
+                  }
+                  return 0;
+                })();
+
+                const completed = exploredRegions >= lvl.required;
+                const inProgress = !completed && exploredRegions > prevStrict;
+
+                const denom = Math.max(1, lvl.required - prevStrict);
+                const numer = Math.max(
+                  0,
+                  Math.min(exploredRegions, lvl.required) - prevStrict
+                );
                 const progress = Math.min(
                   100,
-                  Math.round(
-                    ((Math.min(exploredRegions, lvl.required) - prev) /
-                      Math.max(1, lvl.required - prev)) *
-                      100
-                  )
+                  Math.round((numer / denom) * 100)
                 );
+
+                const cardClasses = completed
+                  ? "bg-green-50 border-green-200"
+                  : inProgress
+                  ? "bg-blue-50 border-blue-200"
+                  : "bg-gray-50 border-gray-200";
+
+                const barColor = completed
+                  ? "bg-green-500"
+                  : inProgress
+                  ? "bg-blue-500"
+                  : "bg-gray-400";
+
+                const emojiClasses = `text-3xl ${
+                  completed || inProgress ? "" : "grayscale"
+                }`;
+
                 return (
                   <motion.div
                     variants={fadeUp}
                     whileHover={{ y: -3 }}
                     key={idx}
-                    className={`p-4 rounded-xl border ${
-                      unlocked
-                        ? "bg-green-50 border-green-200"
-                        : "bg-gray-50 border-gray-200"
-                    }`}
+                    className={`p-4 rounded-xl border ${cardClasses}`}
                   >
                     <div className="flex items-start justify-between">
                       <div>
@@ -513,21 +629,21 @@ export default function StatsPage() {
                           Reach {lvl.required} provinces
                         </div>
                       </div>
-                      <div
-                        className={`text-3xl ${unlocked ? "" : "grayscale"}`}
-                      >
-                        {lvl.emoji}
-                      </div>
+                      <div className={emojiClasses}>{lvl.emoji}</div>
                     </div>
                     <div className="w-full bg-gray-200 h-1.5 rounded-full mt-3 overflow-hidden">
                       <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${progress}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.7 }}
-                        className={`h-1.5 rounded-full ${
-                          unlocked ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                        initial={disableAnims ? undefined : { width: 0 }}
+                        animate={
+                          disableAnims ? undefined : { width: `${progress}%` }
+                        }
+                        transition={
+                          disableAnims ? undefined : { duration: 0.7 }
+                        }
+                        style={
+                          disableAnims ? { width: `${progress}%` } : undefined
+                        }
+                        className={`h-1.5 rounded-full ${barColor}`}
                       />
                     </div>
                     <div className="text-xs text-gray-700 mt-1">

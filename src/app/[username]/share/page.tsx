@@ -30,7 +30,6 @@ export default function ShareByUsernamePage() {
   const router = useRouter();
   const { user } = useAuth();
   const username = (params?.username as string) || "";
-  const [uid, setUid] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SnapshotDoc | null>(null);
   const [svgContent, setSvgContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -40,8 +39,7 @@ export default function ShareByUsernamePage() {
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   // New: server-generated caption state
   const [caption, setCaption] = useState<string>("");
-  const [captionLoading, setCaptionLoading] = useState<boolean>(false);
-  const [captionError, setCaptionError] = useState<string | null>(null);
+  const fileName = `been-there-${username}.png`;
 
   useEffect(() => {
     const run = async () => {
@@ -56,7 +54,6 @@ export default function ShareByUsernamePage() {
           return;
         }
         const uidVal = (unameSnap.data() as any)?.uid as string;
-        setUid(uidVal);
         // load snapshot at snapshots/<uid>
         const snapRef = doc(db, "snapshots", uidVal);
         const snap = await getDoc(snapRef);
@@ -73,8 +70,6 @@ export default function ShareByUsernamePage() {
 
         // After snapshot is available, request a caption from our API
         if (snapData?.stats) {
-          setCaptionLoading(true);
-          setCaptionError(null);
           try {
             const res = await fetch("/api/share-caption", {
               method: "POST",
@@ -88,9 +83,6 @@ export default function ShareByUsernamePage() {
             if (json?.caption) setCaption(json.caption as string);
           } catch (e: any) {
             console.error("Caption error:", e);
-            setCaptionError(e?.message || "Could not generate caption");
-          } finally {
-            setCaptionLoading(false);
           }
         }
       } catch (e) {
@@ -175,7 +167,7 @@ export default function ShareByUsernamePage() {
         achievementNode
           ? htmlToImage.toPng(achievementNode, {
               backgroundColor: "#ffffff",
-              pixelRatio: 2,
+              pixelRatio: 3, // sharper text
               skipFonts: false,
               style: { paddingTop: "10px" },
             })
@@ -183,7 +175,7 @@ export default function ShareByUsernamePage() {
         progressNode
           ? htmlToImage.toPng(progressNode, {
               backgroundColor: "#ffffff",
-              pixelRatio: 2,
+              pixelRatio: 3, // sharper text
               skipFonts: false,
               style: { paddingTop: "8px" },
             })
@@ -210,10 +202,129 @@ export default function ShareByUsernamePage() {
             // Draw the map SVG image full size
             ctx.drawImage(img, 0, 0, width, height);
 
+            // === Add a small Philippine flag at the top-right ===
+            function drawStar(
+              ctx: CanvasRenderingContext2D,
+              cx: number,
+              cy: number,
+              outerRadius: number,
+              innerRadius: number,
+              color: string
+            ) {
+              ctx.save();
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              const spikes = 5;
+              let rot = (Math.PI / 2) * 3;
+              const step = Math.PI / spikes;
+              ctx.moveTo(cx, cy - outerRadius);
+              for (let i = 0; i < spikes; i++) {
+                let x = cx + Math.cos(rot) * outerRadius;
+                let y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+              }
+              ctx.closePath();
+              ctx.fill();
+              ctx.restore();
+            }
+
+            function drawPhilippineFlag(
+              ctx: CanvasRenderingContext2D,
+              x: number,
+              y: number,
+              w: number
+            ) {
+              const h = Math.round(w / 2); // Official ratio ~1:2 (height:width)
+              ctx.save();
+
+              // Blue top half
+              ctx.fillStyle = "#0038A8";
+              ctx.fillRect(x, y, w, h / 2);
+
+              // Red bottom half
+              ctx.fillStyle = "#CE1126";
+              ctx.fillRect(x, y + h / 2, w, h / 2);
+
+              // White triangle at hoist
+              ctx.fillStyle = "#FFFFFF";
+              ctx.beginPath();
+              ctx.moveTo(x, y);
+              ctx.lineTo(x, y + h);
+              ctx.lineTo(x + h, y + h / 2);
+              ctx.closePath();
+              ctx.fill();
+
+              // Golden sun with simple rays
+              const sunCx = x + h * 0.38;
+              const sunCy = y + h * 0.5;
+              const sunR = h * 0.09;
+              ctx.fillStyle = "#FCD116";
+              ctx.beginPath();
+              ctx.arc(sunCx, sunCy, sunR, 0, Math.PI * 2);
+              ctx.fill();
+
+              ctx.strokeStyle = "#FCD116";
+              ctx.lineWidth = Math.max(1, h * 0.02);
+              const rays = 8;
+              for (let i = 0; i < rays; i++) {
+                const a = (i * Math.PI * 2) / rays;
+                const r1 = sunR * 1.6;
+                const r2 = sunR * 2.3;
+                ctx.beginPath();
+                ctx.moveTo(sunCx + Math.cos(a) * r1, sunCy + Math.sin(a) * r1);
+                ctx.lineTo(sunCx + Math.cos(a) * r2, sunCy + Math.sin(a) * r2);
+                ctx.stroke();
+              }
+
+              // Three stars at triangle vertices
+              const starR = h * 0.06;
+              const starIR = starR * 0.5;
+              // Near top-left corner inside triangle
+              drawStar(
+                ctx,
+                x + h * 0.18,
+                y + h * 0.12,
+                starR,
+                starIR,
+                "#FCD116"
+              );
+              // Near bottom-left corner inside triangle
+              drawStar(
+                ctx,
+                x + h * 0.18,
+                y + h * 0.88,
+                starR,
+                starIR,
+                "#FCD116"
+              );
+              // Near apex
+              drawStar(
+                ctx,
+                x + h * 0.92,
+                y + h * 0.5,
+                starR,
+                starIR,
+                "#FCD116"
+              );
+
+              ctx.restore();
+            }
+
+            const flagW = Math.min(120, Math.round(width * 0.12));
+            const edgePad = Math.round((width / 1080) * 12);
+            drawPhilippineFlag(ctx, width - flagW - edgePad, edgePad, flagW);
+            // === End flag ===
+
             // Place the captured cards at the very top-left (top-0 left-0)
-            const leftPad = 12; // left-0 with slight breathing room
-            let y = 12; // top-0 with slight breathing room
-            const maxCardWidth = Math.min(Math.round(width * 0.3), 360);
+            const baseScale = width / 1080;
+            const leftPad = Math.round(12 * baseScale); // slightly reduced padding
+            let y = leftPad;
+            const maxCardWidth = Math.min(Math.round(width * 0.3), 380); // reduced card width
 
             const drawDataUrl = (dataUrl: string | null, maxW: number) => {
               if (!dataUrl) return Promise.resolve();
@@ -227,12 +338,12 @@ export default function ShareByUsernamePage() {
                   // Draw with soft shadow
                   ctx.save();
                   ctx.shadowColor = "rgba(0,0,0,0.12)";
-                  ctx.shadowBlur = 14;
-                  ctx.shadowOffsetY = 6;
+                  ctx.shadowBlur = 12;
+                  ctx.shadowOffsetY = 5;
                   ctx.drawImage(cardImg, leftPad, y, w, h);
                   ctx.restore();
 
-                  y += h + 12; // tighter spacing between cards
+                  y += h + Math.round(10 * baseScale); // reduced spacing
                   res();
                 };
                 cardImg.src = dataUrl;
@@ -265,26 +376,26 @@ export default function ShareByUsernamePage() {
                 `Try yours  been-there-lovat.vercel.app 🗺️`,
               ];
 
-              ctx.font =
-                "600 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial";
+              const footerFontPx = Math.max(14, Math.round(14 * baseScale));
+              ctx.font = `600 ${footerFontPx}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial`;
 
               for (const text of footerLines) {
                 const metrics = ctx.measureText(text);
                 const ascent = (metrics as any).actualBoundingBoxAscent || 10;
                 const descent = (metrics as any).actualBoundingBoxDescent || 4;
                 const textH = ascent + descent;
-                const padX = 12;
-                const padY = 8;
+                const padX = Math.round(12 * baseScale);
+                const padY = Math.round(8 * baseScale);
                 const boxW = Math.ceil(metrics.width) + padX * 2;
                 const boxH = Math.ceil(textH) + padY * 2;
                 const boxX = leftPad;
-                const boxY = y + 6;
+                const boxY = y + Math.round(6 * baseScale);
 
                 // Rounded pill background
-                const r = 10;
+                const r = Math.round(10 * baseScale);
                 ctx.save();
                 ctx.shadowColor = "rgba(0,0,0,0.12)";
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = 9;
                 ctx.shadowOffsetY = 4;
                 ctx.fillStyle = "rgba(255,255,255,0.95)";
                 ctx.beginPath();
@@ -311,7 +422,7 @@ export default function ShareByUsernamePage() {
                 ctx.fillText(text, boxX + padX, boxY + padY + ascent);
 
                 // Advance Y for next line with small gap
-                y = boxY + boxH + 6;
+                y = boxY + boxH + Math.round(6 * baseScale);
               }
 
               canvas.toBlob(
@@ -343,7 +454,9 @@ export default function ShareByUsernamePage() {
         setTimeout(() => setShareMessage(null), 3000);
         return;
       }
-      const file = new File([blob], "btp-snapshot.png", { type: "image/png" });
+      const file = new File([blob], fileName, {
+        type: "image/png",
+      });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -354,7 +467,7 @@ export default function ShareByUsernamePage() {
         const a = document.createElement("a");
         const url = URL.createObjectURL(blob);
         a.href = url;
-        a.download = "btp-snapshot.png";
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -381,7 +494,7 @@ export default function ShareByUsernamePage() {
       const a = document.createElement("a");
       const url = URL.createObjectURL(blob);
       a.href = url;
-      a.download = "btp-snapshot.png";
+      a.download = "been-";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -482,8 +595,6 @@ export default function ShareByUsernamePage() {
     currentLevelNumber,
     currentLevelMeta,
     nextLevelMeta,
-    nextRequired,
-    prevRequired,
     toNext,
     levelProgress,
   } = getLevelInfo(visitedTotal, totalProvinces);
@@ -512,10 +623,10 @@ export default function ShareByUsernamePage() {
           </div>
           <div className="lg:col-span-1 lg:sticky lg:top-6 self-start space-y-4">
             <Link
-              href={`/map`}
+              href={`/`}
               className="w-full px-4 py-2.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold shadow-sm hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
-              Back to Map
+              Back to Home
             </Link>
 
             <div

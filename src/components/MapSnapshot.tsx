@@ -129,10 +129,6 @@ export default function MapSnapshot({
     }
   };
 
-  // Show success message briefly after generation
-  const showSuccessMessage =
-    lastGenerated && Date.now() - lastGenerated.getTime() < 3000;
-
   if (!svgContent) {
     return null;
   }
@@ -142,7 +138,7 @@ export default function MapSnapshot({
       <div className="space-y-2">
         <button
           onClick={createPermalink}
-          disabled={isSharing || !user}
+          disabled={shareUrl !== null || isSharing || !user}
           title={!user ? "Sign in to create a shareable link" : undefined}
           className={`w-full px-3 py-2 lg:px-4 lg:py-3 text-xs lg:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:shadow-lg ${className}`}
         >
@@ -166,11 +162,11 @@ export default function MapSnapshot({
 
         {shareUrl && (
           <div className="space-y-2">
-            <div className="text-center p-2 bg-green-50 rounded-lg">
+            <div className="text-center bg-green-50 rounded-lg">
               <Link
                 href={shareUrl as string}
                 rel="noopener noreferrer"
-                className="text-xs text-green-700 font-medium flex items-center justify-center hover:underline"
+                className="inline-flex  w-full items-center justify-center px-3 py-2 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg shadow transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                 aria-label="Visit your shareable link"
               >
                 <svg
