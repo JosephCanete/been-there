@@ -243,13 +243,68 @@ export default function ShareByUsernamePage() {
               await drawDataUrl(achDataUrl, maxCardWidth);
               await drawDataUrl(progDataUrl, maxCardWidth);
 
-              // Footer under the cards
-              const footer =
-                "Created from: https://been-there-lovat.vercel.app/";
+              // Footer badge under the cards (date + source)
+              const createdOn = (() => {
+                const ca: any = (snapshot as any)?.createdAt;
+                let d: Date | null = null;
+                if (ca && typeof ca.toDate === "function") d = ca.toDate();
+                else if (typeof ca === "number") d = new Date(ca);
+                else if (typeof ca === "string") {
+                  const dd = new Date(ca);
+                  if (!isNaN(dd.getTime())) d = dd;
+                }
+                return (d || new Date()).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                });
+              })();
+
+              const footerText = `Created ${createdOn} try yours  been-there-lovat.vercel.app`;
+
+              // Measure text and draw a subtle pill background for better visibility
               ctx.font =
-                "600 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial";
-              ctx.fillStyle = "#374151";
-              ctx.fillText(footer, leftPad, y + 10);
+                "600 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial";
+              const metrics = ctx.measureText(footerText);
+              const ascent = (metrics as any).actualBoundingBoxAscent || 10;
+              const descent = (metrics as any).actualBoundingBoxDescent || 4;
+              const textH = ascent + descent;
+              const padX = 12;
+              const padY = 8;
+              const boxW = Math.ceil(metrics.width) + padX * 2;
+              const boxH = Math.ceil(textH) + padY * 2;
+              const boxX = leftPad;
+              const boxY = y + 6;
+
+              // Draw rounded rectangle
+              const r = 10;
+              ctx.save();
+              ctx.shadowColor = "rgba(0,0,0,0.12)";
+              ctx.shadowBlur = 10;
+              ctx.shadowOffsetY = 4;
+              ctx.fillStyle = "rgba(255,255,255,0.95)";
+              ctx.beginPath();
+              ctx.moveTo(boxX + r, boxY);
+              ctx.lineTo(boxX + boxW - r, boxY);
+              ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+              ctx.lineTo(boxX + boxW, boxY + boxH - r);
+              ctx.quadraticCurveTo(
+                boxX + boxW,
+                boxY + boxH,
+                boxX + boxW - r,
+                boxY + boxH
+              );
+              ctx.lineTo(boxX + r, boxY + boxH);
+              ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+              ctx.lineTo(boxX, boxY + r);
+              ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+              ctx.closePath();
+              ctx.fill();
+              ctx.restore();
+
+              // Draw footer text
+              ctx.fillStyle = "#1f2937";
+              ctx.fillText(footerText, boxX + padX, boxY + padY + ascent);
 
               canvas.toBlob(
                 (b) => (b ? resolve(b) : reject(new Error("toBlob"))),
