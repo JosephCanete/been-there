@@ -494,7 +494,7 @@ export default function ShareByUsernamePage() {
       const a = document.createElement("a");
       const url = URL.createObjectURL(blob);
       a.href = url;
-      a.download = "been-";
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
