@@ -243,7 +243,7 @@ export default function ShareByUsernamePage() {
               await drawDataUrl(achDataUrl, maxCardWidth);
               await drawDataUrl(progDataUrl, maxCardWidth);
 
-              // Footer badge under the cards (date + source)
+              // Footer badges under the cards (date + source on two lines)
               const createdOn = (() => {
                 const ca: any = (snapshot as any)?.createdAt;
                 let d: Date | null = null;
@@ -260,51 +260,59 @@ export default function ShareByUsernamePage() {
                 });
               })();
 
-              const footerText = `Created ${createdOn} try yours  been-there-lovat.vercel.app`;
+              const footerLines = [
+                `Created ${createdOn} 🕒`,
+                `Try yours  been-there-lovat.vercel.app 🗺️`,
+              ];
 
-              // Measure text and draw a subtle pill background for better visibility
               ctx.font =
                 "600 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial";
-              const metrics = ctx.measureText(footerText);
-              const ascent = (metrics as any).actualBoundingBoxAscent || 10;
-              const descent = (metrics as any).actualBoundingBoxDescent || 4;
-              const textH = ascent + descent;
-              const padX = 12;
-              const padY = 8;
-              const boxW = Math.ceil(metrics.width) + padX * 2;
-              const boxH = Math.ceil(textH) + padY * 2;
-              const boxX = leftPad;
-              const boxY = y + 6;
 
-              // Draw rounded rectangle
-              const r = 10;
-              ctx.save();
-              ctx.shadowColor = "rgba(0,0,0,0.12)";
-              ctx.shadowBlur = 10;
-              ctx.shadowOffsetY = 4;
-              ctx.fillStyle = "rgba(255,255,255,0.95)";
-              ctx.beginPath();
-              ctx.moveTo(boxX + r, boxY);
-              ctx.lineTo(boxX + boxW - r, boxY);
-              ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
-              ctx.lineTo(boxX + boxW, boxY + boxH - r);
-              ctx.quadraticCurveTo(
-                boxX + boxW,
-                boxY + boxH,
-                boxX + boxW - r,
-                boxY + boxH
-              );
-              ctx.lineTo(boxX + r, boxY + boxH);
-              ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
-              ctx.lineTo(boxX, boxY + r);
-              ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
-              ctx.closePath();
-              ctx.fill();
-              ctx.restore();
+              for (const text of footerLines) {
+                const metrics = ctx.measureText(text);
+                const ascent = (metrics as any).actualBoundingBoxAscent || 10;
+                const descent = (metrics as any).actualBoundingBoxDescent || 4;
+                const textH = ascent + descent;
+                const padX = 12;
+                const padY = 8;
+                const boxW = Math.ceil(metrics.width) + padX * 2;
+                const boxH = Math.ceil(textH) + padY * 2;
+                const boxX = leftPad;
+                const boxY = y + 6;
 
-              // Draw footer text
-              ctx.fillStyle = "#1f2937";
-              ctx.fillText(footerText, boxX + padX, boxY + padY + ascent);
+                // Rounded pill background
+                const r = 10;
+                ctx.save();
+                ctx.shadowColor = "rgba(0,0,0,0.12)";
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetY = 4;
+                ctx.fillStyle = "rgba(255,255,255,0.95)";
+                ctx.beginPath();
+                ctx.moveTo(boxX + r, boxY);
+                ctx.lineTo(boxX + boxW - r, boxY);
+                ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + r);
+                ctx.lineTo(boxX + boxW, boxY + boxH - r);
+                ctx.quadraticCurveTo(
+                  boxX + boxW,
+                  boxY + boxH,
+                  boxX + boxW - r,
+                  boxY + boxH
+                );
+                ctx.lineTo(boxX + r, boxY + boxH);
+                ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - r);
+                ctx.lineTo(boxX, boxY + r);
+                ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+
+                // Text
+                ctx.fillStyle = "#1f2937";
+                ctx.fillText(text, boxX + padX, boxY + padY + ascent);
+
+                // Advance Y for next line with small gap
+                y = boxY + boxH + 6;
+              }
 
               canvas.toBlob(
                 (b) => (b ? resolve(b) : reject(new Error("toBlob"))),
@@ -643,7 +651,7 @@ export default function ShareByUsernamePage() {
                   <h2 className="text-lg font-semibold text-gray-800">
                     Progress
                   </h2>
-                  <p className="text-sm text-gray-600 truncate">
+                  <p className="text-sm text-gray-600">
                     Visited {visitedTotal} of {snapshot.stats.total} provinces
                   </p>
                   <div className="mt-2 h-2 w-full rounded-full bg-gray-200 overflow-hidden">
