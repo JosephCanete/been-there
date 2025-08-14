@@ -256,14 +256,7 @@ export default function ShareByUsernamePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 py-6 lg:py-10">
-          {/* Header skeleton */}
-          <div className="mb-6">
-            <div className="h-7 w-64 bg-gray-200 rounded animate-pulse mb-2" />
-            <div className="h-4 w-40 bg-gray-100 rounded animate-pulse" />
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Map card skeleton */}
             <div className="lg:col-span-3 bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
               <div className="relative aspect-[3/4] w-full h-full">
                 <div className="absolute inset-0">
@@ -380,9 +373,14 @@ export default function ShareByUsernamePage() {
             </div>
           </div>
           <div className="lg:col-span-1 lg:sticky lg:top-6 self-start space-y-4">
-            {/* Current badge card */}
+            <Link
+              href={`/map`}
+              className="w-full px-4 py-2.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold shadow-sm hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            >
+              Back to Map
+            </Link>
 
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-5">
+            <div className="bg-white mt-4 rounded-xl shadow border border-gray-200 p-5">
               <h2 className="text-lg capitalize font-semibold text-gray-800">
                 {username}'s Philippine Map
               </h2>
@@ -420,7 +418,7 @@ export default function ShareByUsernamePage() {
                   </div>
                 </div>
               ) : null}
-              <div className="text-sm mt-2 text-gray-700 bg-gray-50 border border-gray-200 rounded p-2">
+              {/* <div className="text-sm mt-2 text-gray-700 bg-gray-50 border border-gray-200 rounded p-2">
                 {(captionLoading || caption) && (
                   <div className="mb-1 flex items-center gap-1 text-[11px] font-medium text-violet-700">
                     <span aria-hidden>✨</span>
@@ -645,7 +643,7 @@ export default function ShareByUsernamePage() {
                 ) : captionError ? (
                   <span className="text-red-600">{captionError}</span>
                 ) : null}
-              </div>
+              </div> */}
             </div>
 
             {/* Share this snapshot */}

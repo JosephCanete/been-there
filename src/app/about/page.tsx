@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function AboutPage() {
   const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
@@ -9,9 +10,43 @@ export default function AboutPage() {
     hidden: {},
     show: { transition: { staggerChildren: 0.08 } },
   };
+  const scaleIn = {
+    hidden: { opacity: 0, scale: 0.96 },
+    show: { opacity: 1, scale: 1 },
+  };
+
+  const faqs = [
+    {
+      q: "Do I need an account to use Been There Philippines?",
+      a: "No account is required. Your progress is stored locally in your browser so you can start right away.",
+    },
+    {
+      q: "How do status levels work on the map?",
+      a: "Tap or click a province to cycle through statuses like Not Visited, Visited, Been There, and Lived. Your selections auto‑save.",
+    },
+    {
+      q: "Can I use it on mobile?",
+      a: "Yes. The app is fully responsive and optimized for touch interactions on phones and tablets.",
+    },
+    {
+      q: "How can I share my map?",
+      a: "Use the Share feature to generate a shareable view of your current progress.",
+    },
+  ];
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const toggleFaq = (i: number) => setOpenFaq((p) => (p === i ? null : i));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* Decorative background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl" />
+      </div>
+
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/40 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,6 +98,13 @@ export default function AboutPage() {
                 Home
               </Link>
               <Link
+                href="/about"
+                aria-current="page"
+                className="text-gray-900 font-semibold"
+              >
+                About
+              </Link>
+              <Link
                 href="/stats"
                 className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
               >
@@ -79,26 +121,84 @@ export default function AboutPage() {
         </div>
       </nav>
 
-      {/* About Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* Main Content */}
+      <main className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <motion.div
           variants={container}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          className="space-y-16"
+          viewport={{ once: true, amount: 0.15 }}
+          className="space-y-12 sm:space-y-16"
         >
+          {/* Hero */}
           <motion.section
             variants={fadeUp}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 sm:p-12 text-white shadow-xl"
+          >
+            <div className="absolute inset-0 opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]">
+              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern
+                    id="grid"
+                    width="32"
+                    height="32"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <path
+                      d="M 32 0 L 0 0 0 32"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="0.5"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+              </svg>
+            </div>
+            <div className="relative">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium ring-1 ring-white/30 backdrop-blur">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                Built for travelers
+              </span>
+              <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
+                Map your Philippine adventures with ease
+              </h1>
+              <p className="mt-3 sm:mt-4 max-w-2xl text-sm sm:text-base text-blue-100">
+                A fast, delightful way to track where you’ve been, where you’ve
+                stayed, and the places you’ve called home—powered by a simple,
+                interactive map.
+              </p>
+              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/map"
+                  className="inline-flex items-center justify-center rounded-full bg-white text-blue-700 px-5 py-2.5 text-sm font-semibold shadow hover:shadow-md transition-all"
+                >
+                  🗺️ Open Interactive Map
+                </Link>
+                <Link
+                  href="/stats"
+                  className="inline-flex items-center justify-center rounded-full border border-white/70 px-5 py-2.5 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
+                >
+                  View Stats
+                </Link>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* About */}
+          <motion.section
+            variants={scaleIn}
             className="bg-white rounded-2xl p-8 shadow-lg"
           >
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">About Me </h1>
-            <p className="text-lg text-gray-700 leading-relaxed">
-              I am a software engineer based in Singapore who loves coding and
-              building useful things. AI helped me to accelerate development and
-              refine the experience of this personal project.
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+              About the Project
+            </h2>
+            <p className="text-gray-700 leading-relaxed">
+              I’m a software engineer based in Singapore who loves building
+              useful things. AI helped accelerate development and refine the
+              experience of this personal project.
             </p>
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <a
                 href="https://www.linkedin.com/in/raymond-joseph-ca%C3%B1ete-30b84b192/"
                 target="_blank"
@@ -115,9 +215,16 @@ export default function AboutPage() {
                 </svg>
                 Connect on LinkedIn
               </a>
+              <a
+                href="mailto:hello@example.com"
+                className="inline-flex items-center gap-2 rounded-full border border-gray-300 text-gray-700 px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                ✉️ Contact
+              </a>
             </div>
           </motion.section>
 
+          {/* How It Works */}
           <motion.section
             variants={fadeUp}
             className="bg-white rounded-2xl p-8 shadow-lg"
@@ -125,42 +232,53 @@ export default function AboutPage() {
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
               How It Works
             </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  🗺️ Interactive Map
+            <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+              <div className="group rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                  <span>🗺️</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                  Interactive Map
                 </h4>
                 <p className="text-gray-600">
-                  Click on any province to cycle through different status
-                  levels. Pan and zoom to explore every corner of the
-                  Philippines.
+                  Click any province to cycle through different status levels.
+                  Pan and zoom to explore every corner of the Philippines.
                 </p>
               </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  📱 Mobile Friendly
+              <div className="group rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+                  <span>📱</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                  Mobile Friendly
                 </h4>
                 <p className="text-gray-600">
-                  Fully responsive design works perfectly on your phone, tablet,
-                  or desktop. Track your travels wherever you are.
+                  Fully responsive design works on your phone, tablet, or
+                  desktop. Track your travels wherever you are.
                 </p>
               </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  💾 Auto Save
+              <div className="group rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+                  <span>💾</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                  Auto Save
                 </h4>
                 <p className="text-gray-600">
                   Your progress is automatically saved locally in your browser.
-                  No account required, your data stays private.
+                  No account required—your data stays private.
                 </p>
               </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                  📊 Progress Tracking
+              <div className="group rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow">
+                <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-pink-50 text-pink-600 ring-1 ring-pink-100">
+                  <span>📊</span>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                  Progress Tracking
                 </h4>
                 <p className="text-gray-600">
                   See detailed statistics about your travel progress and
-                  completion percentage across all Philippine regions.
+                  completion percentage across all regions.
                 </p>
               </div>
             </div>
@@ -174,60 +292,63 @@ export default function AboutPage() {
             <h3 className="text-2xl font-bold text-gray-900 mb-6">
               Travel Status Levels
             </h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-lg">
-                <div className="w-6 h-6 bg-green-500 rounded border-2 border-green-700"></div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-4 p-4 rounded-lg ring-1 ring-green-200/60 bg-green-50/60">
+                <div className="w-6 h-6 rounded border-2 border-green-700 bg-green-500" />
                 <div>
                   <h4 className="font-semibold text-green-800">Been There</h4>
                   <p className="text-green-700 text-sm">
-                    Places you&apos;ve visited and explored
+                    Places you’ve visited and explored deeply
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4 p-4 bg-blue-50 rounded-lg">
-                <div className="w-6 h-6 bg-blue-500 rounded border-2 border-blue-700"></div>
+              <div className="flex items-center gap-4 p-4 rounded-lg ring-1 ring-blue-200/60 bg-blue-50/60">
+                <div className="w-6 h-6 rounded border-2 border-blue-700 bg-blue-500" />
                 <div>
                   <h4 className="font-semibold text-blue-800">Visited</h4>
                   <p className="text-blue-700 text-sm">
-                    Destinations where you&apos;ve spent the night or stayed
-                    longer
+                    Destinations you’ve stayed in or spent meaningful time
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4 p-4 bg-red-50 rounded-lg">
-                <div className="w-6 h-6 bg-red-500 rounded border-2 border-red-700"></div>
+              <div className="flex items-center gap-4 p-4 rounded-lg ring-1 ring-rose-200/60 bg-rose-50/60">
+                <div className="w-6 h-6 rounded border-2 border-rose-700 bg-rose-500" />
                 <div>
-                  <h4 className="font-semibold text-red-800">Lived</h4>
-                  <p className="text-red-700 text-sm">
-                    Places you&apos;ve passed through during transit
+                  <h4 className="font-semibold text-rose-800">Lived</h4>
+                  <p className="text-rose-700 text-sm">
+                    Places you’ve called home for months or years
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-6 h-6 bg-gray-300 rounded border-2 border-gray-500"></div>
+              <div className="flex items-center gap-4 p-4 rounded-lg ring-1 ring-gray-200 bg-gray-50">
+                <div className="w-6 h-6 rounded border-2 border-gray-500 bg-gray-300" />
                 <div>
                   <h4 className="font-semibold text-gray-800">Not Visited</h4>
                   <p className="text-gray-700 text-sm">
-                    Areas you haven&apos;t explored yet
+                    Areas you haven’t explored yet
                   </p>
                 </div>
               </div>
             </div>
           </motion.section>
 
+          {/* FAQ */}
+
           {/* Call to Action */}
           <motion.section
             variants={fadeUp}
-            className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-12 text-white"
+            className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-10 sm:p-12 text-white"
           >
-            <h3 className="text-3xl font-bold mb-4">Ready to Start Mapping?</h3>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-3">
+              Ready to Start Mapping?
+            </h3>
+            <p className="text-base sm:text-lg text-blue-100 mb-6 max-w-2xl mx-auto">
               Begin documenting your Philippine adventures today. Every journey
               has a story worth remembering.
             </p>
             <Link
               href="/map"
-              className="bg-white text-blue-600 px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all duration-200 transform hover:scale-105 inline-block"
+              className="bg-white text-blue-600 px-6 sm:px-8 py-3 sm:py-4 rounded-full text-sm sm:text-lg font-semibold hover:shadow-xl transition-all duration-200 transform hover:scale-105 inline-block"
             >
               🗺️ Open Interactive Map
             </Link>

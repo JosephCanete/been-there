@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { serverTimestamp, doc, getDoc, setDoc } from "firebase/firestore";
 import { useAuth } from "./AuthProvider";
 import CopyButton from "./CopyButton";
+import Link from "next/link";
 
 interface MapSnapshotProps {
   mapState: MapState;
@@ -166,7 +167,12 @@ export default function MapSnapshot({
         {shareUrl && (
           <div className="space-y-2">
             <div className="text-center p-2 bg-green-50 rounded-lg">
-              <p className="text-xs text-green-700 font-medium flex items-center justify-center">
+              <Link
+                href={shareUrl as string}
+                rel="noopener noreferrer"
+                className="text-xs text-green-700 font-medium flex items-center justify-center hover:underline"
+                aria-label="Visit your shareable link"
+              >
                 <svg
                   className="w-3 h-3 mr-1"
                   fill="currentColor"
@@ -178,8 +184,8 @@ export default function MapSnapshot({
                     clipRule="evenodd"
                   />
                 </svg>
-                Link ready! {showSuccessMessage ? "(Copied)" : ""}
-              </p>
+                <span>Visit your shareable link</span>
+              </Link>
             </div>
             <div className="flex items-center gap-2">
               <input
