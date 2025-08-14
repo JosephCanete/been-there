@@ -142,7 +142,7 @@ export default function OnboardingPage() {
           { merge: true }
         );
       });
-      router.replace("/");
+      router.push("/map");
     } catch (e: any) {
       setError(e.message || "Failed to set username");
     } finally {
