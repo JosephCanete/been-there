@@ -15,7 +15,8 @@ import {
 import CopyButton from "@/components/CopyButton";
 import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
-import { getLevelInfo, PRE_LEVEL } from "@/utils/gamification";
+import { getLevelInfo } from "@/utils/gamification";
+import * as htmlToImage from "html-to-image";
 
 interface SnapshotDoc {
   mapState: MapState;
@@ -142,52 +143,123 @@ export default function ShareByUsernamePage() {
     caption?.trim() ||
     `${username}'s Philippines travel progress — check it out!`;
 
-  const openCentered = (url: string) => {
-    const w = 900;
-    const h = 700;
-    const y = window.top ? (window.top.outerHeight - h) / 2 : 50;
-    const x = window.top ? (window.top.outerWidth - w) / 2 : 50;
-    window.open(
-      url,
-      "_blank",
-      `toolbar=0,location=0,menubar=0,width=${w},height=${h},top=${y},left=${x}`
-    );
-  };
-
   const generatePngBlob = async (): Promise<Blob | null> => {
     try {
       const host = svgHostRef.current;
       if (!host) return null;
       const svg = host.querySelector("svg");
       if (!svg) return null;
+
       const viewBox = svg.getAttribute("viewBox") || "0 0 770 1250";
       const [, , vw, vh] = viewBox.split(" ").map(Number);
+
+      // Base target width for the output image (good for social)
       const targetWidth = 1080;
       const scale = targetWidth / (vw || 770);
       const width = Math.round((vw || 770) * scale);
       const height = Math.round((vh || 1250) * scale);
 
+      // Serialize SVG to data URL
       const serialized = new XMLSerializer().serializeToString(svg);
       const svg64 =
         "data:image/svg+xml;charset=utf-8," + encodeURIComponent(serialized);
 
+      // Load as image
       const img = new Image();
       img.crossOrigin = "anonymous";
+
+      // Render DOM cards to images using html-to-image
+      const achievementNode = document.getElementById("achievement-card");
+      const progressNode = document.getElementById("progress-card");
+      const [achDataUrl, progDataUrl] = await Promise.all([
+        achievementNode
+          ? htmlToImage.toPng(achievementNode, {
+              backgroundColor: "#ffffff",
+              pixelRatio: 2,
+              skipFonts: false,
+              style: { paddingTop: "10px" },
+            })
+          : Promise.resolve<string | null>(null),
+        progressNode
+          ? htmlToImage.toPng(progressNode, {
+              backgroundColor: "#ffffff",
+              pixelRatio: 2,
+              skipFonts: false,
+              style: { paddingTop: "8px" },
+            })
+          : Promise.resolve<string | null>(null),
+      ]);
+
       const blob: Blob = await new Promise((resolve, reject) => {
         img.onload = () => {
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return reject(new Error("No 2D context"));
-          ctx.fillStyle = "#e6f2ff";
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob(
-            (b) => (b ? resolve(b) : reject(new Error("toBlob"))),
-            "image/png",
-            0.95
-          );
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return reject(new Error("No 2D context"));
+
+            // Background (matches page gradient vibe)
+            const grad = ctx.createLinearGradient(0, 0, width, height);
+            grad.addColorStop(0, "#cfeeff");
+            grad.addColorStop(0.45, "#aadaff");
+            grad.addColorStop(1, "#8ccfff");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw the map SVG image full size
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Place the captured cards at the very top-left (top-0 left-0)
+            const leftPad = 12; // left-0 with slight breathing room
+            let y = 12; // top-0 with slight breathing room
+            const maxCardWidth = Math.min(Math.round(width * 0.3), 360);
+
+            const drawDataUrl = (dataUrl: string | null, maxW: number) => {
+              if (!dataUrl) return Promise.resolve();
+              return new Promise<void>((res) => {
+                const cardImg = new Image();
+                cardImg.onload = () => {
+                  const scale = Math.min(1, maxW / cardImg.width);
+                  const w = Math.round(cardImg.width * scale);
+                  const h = Math.round(cardImg.height * scale);
+
+                  // Draw with soft shadow
+                  ctx.save();
+                  ctx.shadowColor = "rgba(0,0,0,0.12)";
+                  ctx.shadowBlur = 14;
+                  ctx.shadowOffsetY = 6;
+                  ctx.drawImage(cardImg, leftPad, y, w, h);
+                  ctx.restore();
+
+                  y += h + 12; // tighter spacing between cards
+                  res();
+                };
+                cardImg.src = dataUrl;
+              });
+            };
+
+            (async () => {
+              await drawDataUrl(achDataUrl, maxCardWidth);
+              await drawDataUrl(progDataUrl, maxCardWidth);
+
+              // Footer under the cards
+              const footer =
+                "Created from: https://been-there-lovat.vercel.app/";
+              ctx.font =
+                "600 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial";
+              ctx.fillStyle = "#374151";
+              ctx.fillText(footer, leftPad, y + 10);
+
+              canvas.toBlob(
+                (b) => (b ? resolve(b) : reject(new Error("toBlob"))),
+                "image/png",
+                0.95
+              );
+            })();
+          } catch (err) {
+            reject(err);
+          }
         };
         img.onerror = reject;
         img.src = svg64;
@@ -217,12 +289,14 @@ export default function ShareByUsernamePage() {
         });
       } else {
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(blob);
+        a.href = url;
         a.download = "btp-snapshot.png";
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(a.href);
+        // Revoke after a short delay to ensure download starts
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
         setShareMessage(
           `Image downloaded. Open ${
             platform === "instagram" ? "Instagram" : "Facebook"
@@ -242,12 +316,13 @@ export default function ShareByUsernamePage() {
     const blob = await generatePngBlob();
     if (blob) {
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
+      a.href = url;
       a.download = "btp-snapshot.png";
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(a.href);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
     setIsGeneratingImage(false);
   };
@@ -380,7 +455,10 @@ export default function ShareByUsernamePage() {
               Back to Map
             </Link>
 
-            <div className="bg-white mt-4 rounded-xl shadow border border-gray-200 p-5">
+            <div
+              id="achievement-card"
+              className="bg-white mt-4 rounded-xl shadow p-5"
+            >
               <h2 className="text-lg capitalize font-semibold text-gray-800">
                 {username}'s Philippine Map
               </h2>
@@ -418,232 +496,6 @@ export default function ShareByUsernamePage() {
                   </div>
                 </div>
               ) : null}
-              {/* <div className="text-sm mt-2 text-gray-700 bg-gray-50 border border-gray-200 rounded p-2">
-                {(captionLoading || caption) && (
-                  <div className="mb-1 flex items-center gap-1 text-[11px] font-medium text-violet-700">
-                    <span aria-hidden>✨</span>
-                    <span>Analyzed by AI</span>
-                  </div>
-                )}
-                {captionLoading ? (
-                  <div
-                    className="ai-caption-loader"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    <div className="badge">
-                      <svg className="core" viewBox="0 0 24 24" aria-hidden>
-                        <defs>
-                          <linearGradient
-                            id="ai-grad2"
-                            x1="0"
-                            y1="0"
-                            x2="1"
-                            y2="1"
-                          >
-                            <stop offset="0%" stopColor="#7C3AED" />
-                            <stop offset="50%" stopColor="#22D3EE" />
-                            <stop offset="100%" stopColor="#6366F1" />
-                          </linearGradient>
-                        </defs>
-                        <path
-                          d="M12 2.5l2.31 4.68 5.17.75-3.74 3.65.88 5.15L12 14.9 7.38 16.73l.88-5.15L4.5 7.93l5.17-.75L12 2.5z"
-                          fill="url(#ai-grad2)"
-                        />
-                      </svg>
-                      <div className="ring r-outer" />
-                      <div className="ring r-inner" />
-                      <span className="orb o1" />
-                      <span className="orb o2" />
-                      <span className="orb o3" />
-                      <span className="shoot s1" />
-                      <span className="shoot s2" />
-                    </div>
-                    <div className="skeleton">
-                      <div className="line long">
-                        <span className="shine" />
-                      </div>
-                      <div className="line mid">
-                        <span className="shine" />
-                      </div>
-                      <div className="line short">
-                        <span className="shine" />
-                      </div>
-                    </div>
-                    <style jsx>{`
-                      .ai-caption-loader {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        padding: 6px 6px;
-                      }
-                      .badge {
-                        position: relative;
-                        width: 36px;
-                        height: 36px;
-                        flex: 0 0 36px;
-                      }
-                      .core {
-                        width: 100%;
-                        height: 100%;
-                        filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.35));
-                        animation: breathe 1.8s ease-in-out infinite;
-                      }
-                      .ring {
-                        position: absolute;
-                        inset: -4px;
-                        border-radius: 9999px;
-                        border: 2px solid transparent;
-                        pointer-events: none;
-                      }
-                      .r-outer {
-                        border-top-color: rgba(124, 58, 237, 0.5);
-                        border-right-color: rgba(34, 211, 238, 0.45);
-                        animation: spin 2.6s linear infinite;
-                      }
-                      .r-inner {
-                        inset: -8px;
-                        border-left-color: rgba(99, 102, 241, 0.35);
-                        border-bottom-color: rgba(167, 139, 250, 0.3);
-                        animation: spin 3.4s linear infinite reverse;
-                      }
-                      .orb {
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        width: 7px;
-                        height: 7px;
-                        border-radius: 9999px;
-                        background: radial-gradient(
-                          circle at 30% 30%,
-                          #fff,
-                          rgba(255, 255, 255, 0.2)
-                        );
-                        box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
-                        transform: translate(-50%, -50%);
-                      }
-                      .o1 {
-                        transform-origin: -14px -14px;
-                        animation: orbit 2.2s linear infinite;
-                      }
-                      .o2 {
-                        transform-origin: 16px -10px;
-                        animation: orbit 2.8s linear infinite;
-                        filter: blur(0.2px);
-                      }
-                      .o3 {
-                        transform-origin: -10px 18px;
-                        animation: orbit 3.2s linear infinite;
-                        filter: blur(0.3px);
-                      }
-                      .shoot {
-                        position: absolute;
-                        width: 26px;
-                        height: 2px;
-                        background: linear-gradient(
-                          90deg,
-                          rgba(255, 255, 255, 0),
-                          rgba(255, 255, 255, 0.95),
-                          rgba(255, 255, 255, 0)
-                        );
-                        opacity: 0.9;
-                        transform: rotate(24deg);
-                        top: -4px;
-                        left: 4px;
-                        animation: shoot 1.8s ease-in-out infinite;
-                      }
-                      .s2 {
-                        transform: rotate(-18deg);
-                        top: auto;
-                        bottom: -6px;
-                        right: -2px;
-                        left: auto;
-                        animation-delay: 0.4s;
-                      }
-
-                      .skeleton {
-                        flex: 1;
-                        min-width: 140px;
-                      }
-                      .line {
-                        position: relative;
-                        height: 8px;
-                        background: #e5e7eb;
-                        border-radius: 8px;
-                        overflow: hidden;
-                      }
-                      .line + .line {
-                        margin-top: 6px;
-                      }
-                      .line.long {
-                        width: 100%;
-                      }
-                      .line.mid {
-                        width: 80%;
-                      }
-                      .line.short {
-                        width: 55%;
-                      }
-                      .shine {
-                        position: absolute;
-                        inset: 0;
-                        transform: translateX(-100%);
-                        background: linear-gradient(
-                          90deg,
-                          rgba(255, 255, 255, 0),
-                          rgba(255, 255, 255, 0.9),
-                          rgba(255, 255, 255, 0)
-                        );
-                        animation: shimmer 1.15s infinite;
-                      }
-
-                      @keyframes spin {
-                        to {
-                          transform: rotate(360deg);
-                        }
-                      }
-                      @keyframes orbit {
-                        to {
-                          transform: translate(-50%, -50%) rotate(360deg);
-                        }
-                      }
-                      @keyframes breathe {
-                        0%,
-                        100% {
-                          transform: scale(1);
-                        }
-                        50% {
-                          transform: scale(1.07);
-                        }
-                      }
-                      @keyframes shoot {
-                        0% {
-                          opacity: 0;
-                          transform: translate(-8px, -6px) rotate(24deg);
-                        }
-                        40% {
-                          opacity: 1;
-                        }
-                        100% {
-                          opacity: 0;
-                          transform: translate(24px, 10px) rotate(24deg);
-                        }
-                      }
-                      @keyframes shimmer {
-                        100% {
-                          transform: translateX(100%);
-                        }
-                      }
-                    `}</style>
-                  </div>
-                ) : caption ? (
-                  <div className="space-y-2">
-                    <p className="whitespace-pre-wrap break-words">{caption}</p>
-                  </div>
-                ) : captionError ? (
-                  <span className="text-red-600">{captionError}</span>
-                ) : null}
-              </div> */}
             </div>
 
             {/* Share this snapshot */}
@@ -693,9 +545,6 @@ export default function ShareByUsernamePage() {
                 {shareMessage && (
                   <div className="text-xs text-gray-600">{shareMessage}</div>
                 )}
-                <div className="text-[11px] text-gray-400">
-                  Tip: Works best on mobile.
-                </div>
               </div>
             </div>
 
@@ -715,7 +564,10 @@ export default function ShareByUsernamePage() {
               </div>
             )}
             {/* Progress card */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-4 lg:p-6 space-y-5">
+            <div
+              id="progress-card"
+              className="bg-white rounded-xl shadow p-4 lg:p-6 space-y-5"
+            >
               <div className="flex items-center gap-4">
                 <div className="relative w-20 h-20 lg:w-24 lg:h-24 shrink-0">
                   <div
