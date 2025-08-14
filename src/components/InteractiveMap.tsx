@@ -46,7 +46,6 @@ export default function InteractiveMap({
 
   // Pan and zoom state (managed by react-zoom-pan-pinch)
   const [isPanning, setIsPanning] = useState(false);
-  const [currentScale, setCurrentScale] = useState(1);
   // Fullscreen support
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
@@ -340,10 +339,6 @@ export default function InteractiveMap({
             }}
             onPanningStart={() => setIsPanning(true)}
             onPanningStop={() => setIsPanning(false)}
-            onInit={({ state }) => setCurrentScale(state.scale)}
-            onZoom={({ state }) => setCurrentScale(state.scale)}
-            onZoomStop={({ state }) => setCurrentScale(state.scale)}
-            onPinchingStop={({ state }) => setCurrentScale(state.scale)}
           >
             {({ zoomIn, zoomOut, resetTransform }) => {
               // Expose controls to keyboard handler and external reset
@@ -451,6 +446,25 @@ export default function InteractiveMap({
                       </svg>
                     </button>
                     <button
+                      onClick={() => resetTransform()}
+                      className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
+                      title="Reset position"
+                    >
+                      <svg
+                        className="w-4 h-4 lg:w-5 lg:h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 00-15.5 3M4 16a8 8 0 0015.5-3"
+                        />
+                      </svg>
+                    </button>
+                    <button
                       onClick={toggleFullscreen}
                       className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black"
                       title={
@@ -491,9 +505,6 @@ export default function InteractiveMap({
                         </svg>
                       )}
                     </button>
-                    <div className="px-1 py-0.5 lg:px-2 lg:py-1 bg-white rounded shadow-lg border border-gray-200 text-xs text-black">
-                      {Math.round(currentScale * 100)}%
-                    </div>
                   </div>
                 </>
               );
