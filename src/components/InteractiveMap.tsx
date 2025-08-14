@@ -506,6 +506,17 @@ export default function InteractiveMap({
                       )}
                     </button>
                   </div>
+
+                  {/* Mobile actions overlay: visible without causing scroll */}
+                  <div className="absolute left-2 right-2 bottom-2 lg:hidden z-30">
+                    <div className="border border-gray-200 bg-white rounded-lg shadow-lg p-2">
+                      <MapSnapshot
+                        mapState={mapState}
+                        stats={stats}
+                        svgContent={svgContent}
+                      />
+                    </div>
+                  </div>
                 </>
               );
             }}
@@ -612,14 +623,16 @@ export default function InteractiveMap({
 
   // Main layout
   return (
-    <div className={`flex flex-col lg:flex-row h-full ${className}`}>
+    <div
+      className={`flex flex-col lg:flex-row h-[100dvh] lg:h-full overflow-hidden ${className}`}
+    >
       {/* Main Map Area - Full width on mobile, 80% on desktop */}
-      <div className="flex-1 relative min-h-[60vh] min-w-0 lg:h-full">
+      <div className="relative h-full min-w-0 lg:flex-1 lg:h-full">
         {renderInteractiveSVG()}
       </div>
 
-      {/* Right Sidebar - Full width on mobile, 20% on desktop */}
-      <div className="w-full lg:w-1/5 lg:min-w-72 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col overflow-hidden">
+      {/* Right Sidebar - hidden on mobile, 20% on desktop */}
+      <div className="hidden lg:flex lg:w-1/5 lg:min-w-72 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex-col overflow-hidden">
         {/* Header */}
         <div className="p-3 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 hidden lg:block">
           <h2 className="text-lg lg:text-xl font-bold text-gray-800 mb-1 lg:mb-2">
@@ -628,15 +641,6 @@ export default function InteractiveMap({
           <p className="text-xs lg:text-sm text-gray-600">
             Track your Philippine adventures across all {stats.total} provinces
           </p>
-        </div>
-
-        {/* Mobile Actions: Snapshot + Reset (visible only on mobile) */}
-        <div className="p-3 lg:p-6 border-b border-gray-200 bg-gray-50 space-y-3 lg:hidden">
-          <MapSnapshot
-            mapState={mapState}
-            stats={stats}
-            svgContent={svgContent}
-          />
         </div>
 
         <div className="flex-1 overflow-y-auto hidden lg:block">

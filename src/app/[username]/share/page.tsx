@@ -145,8 +145,8 @@ export default function ShareByUsernamePage() {
       const viewBox = svg.getAttribute("viewBox") || "0 0 770 1250";
       const [, , vw, vh] = viewBox.split(" ").map(Number);
 
-      // Base target width for the output image (good for social)
-      const targetWidth = 1080;
+      // Increase output resolution and scale up overlay card sizes for larger text
+      const targetWidth = 1440; // was 1080
       const scale = targetWidth / (vw || 770);
       const width = Math.round((vw || 770) * scale);
       const height = Math.round((vh || 1250) * scale);
@@ -160,14 +160,14 @@ export default function ShareByUsernamePage() {
       const img = new Image();
       img.crossOrigin = "anonymous";
 
-      // Render DOM cards to images using html-to-image
+      // Render DOM cards to images using html-to-image (higher pixelRatio for sharper upscaling)
       const achievementNode = document.getElementById("achievement-card");
       const progressNode = document.getElementById("progress-card");
       const [achDataUrl, progDataUrl] = await Promise.all([
         achievementNode
           ? htmlToImage.toPng(achievementNode, {
               backgroundColor: "#ffffff",
-              pixelRatio: 3, // sharper text
+              pixelRatio: 4, // was 3
               skipFonts: false,
               style: { paddingTop: "10px" },
             })
@@ -175,7 +175,7 @@ export default function ShareByUsernamePage() {
         progressNode
           ? htmlToImage.toPng(progressNode, {
               backgroundColor: "#ffffff",
-              pixelRatio: 3, // sharper text
+              pixelRatio: 4, // was 3
               skipFonts: false,
               style: { paddingTop: "8px" },
             })
@@ -191,6 +191,38 @@ export default function ShareByUsernamePage() {
             const ctx = canvas.getContext("2d");
             if (!ctx) return reject(new Error("No 2D context"));
 
+            // Scale and rounded-rect clipping for the final image
+            const baseScale = width / 1080;
+            const cornerRadius = Math.round(24 * baseScale);
+            const roundRectPath = (
+              x: number,
+              y: number,
+              w: number,
+              h: number,
+              r: number
+            ) => {
+              const rr = Math.max(
+                0,
+                Math.min(r, Math.floor(Math.min(w, h) / 2))
+              );
+              ctx.beginPath();
+              ctx.moveTo(x + rr, y);
+              ctx.lineTo(x + w - rr, y);
+              ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+              ctx.lineTo(x + w, y + h - rr);
+              ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+              ctx.lineTo(x + rr, y + h);
+              ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+              ctx.lineTo(x, y + rr);
+              ctx.quadraticCurveTo(x, y, x + rr, y);
+              ctx.closePath();
+            };
+
+            // Clip everything to rounded corners
+            ctx.save();
+            roundRectPath(0, 0, width, height, cornerRadius);
+            ctx.clip();
+
             // Background (matches page gradient vibe)
             const grad = ctx.createLinearGradient(0, 0, width, height);
             grad.addColorStop(0, "#cfeeff");
@@ -202,159 +234,65 @@ export default function ShareByUsernamePage() {
             // Draw the map SVG image full size
             ctx.drawImage(img, 0, 0, width, height);
 
-            // === Add a small Philippine flag at the top-right ===
-            function drawStar(
-              ctx: CanvasRenderingContext2D,
-              cx: number,
-              cy: number,
-              outerRadius: number,
-              innerRadius: number,
-              color: string
-            ) {
-              ctx.save();
-              ctx.fillStyle = color;
-              ctx.beginPath();
-              const spikes = 5;
-              let rot = (Math.PI / 2) * 3;
-              const step = Math.PI / spikes;
-              ctx.moveTo(cx, cy - outerRadius);
-              for (let i = 0; i < spikes; i++) {
-                let x = cx + Math.cos(rot) * outerRadius;
-                let y = cy + Math.sin(rot) * outerRadius;
-                ctx.lineTo(x, y);
-                rot += step;
-                x = cx + Math.cos(rot) * innerRadius;
-                y = cy + Math.sin(rot) * innerRadius;
-                ctx.lineTo(x, y);
-                rot += step;
-              }
-              ctx.closePath();
-              ctx.fill();
-              ctx.restore();
-            }
+            // Removed flag drawing to avoid overlaying the map
 
-            function drawPhilippineFlag(
-              ctx: CanvasRenderingContext2D,
-              x: number,
-              y: number,
-              w: number
-            ) {
-              const h = Math.round(w / 2); // Official ratio ~1:2 (height:width)
-              ctx.save();
+            // Helpers to place cards left and right (and top footer)
+            // baseScale already defined above
+            const pad = Math.round(20 * baseScale);
+            const topPad = pad;
+            const leftPad = pad;
+            const rightPad = pad;
+            const leftMaxW = Math.min(Math.round(width * 0.36), 520);
+            const rightMaxW = Math.min(Math.round(width * 0.36), 520);
 
-              // Blue top half
-              ctx.fillStyle = "#0038A8";
-              ctx.fillRect(x, y, w, h / 2);
+            // Cards should be at the very top
+            const cardsTop = topPad;
 
-              // Red bottom half
-              ctx.fillStyle = "#CE1126";
-              ctx.fillRect(x, y + h / 2, w, h / 2);
-
-              // White triangle at hoist
-              ctx.fillStyle = "#FFFFFF";
-              ctx.beginPath();
-              ctx.moveTo(x, y);
-              ctx.lineTo(x, y + h);
-              ctx.lineTo(x + h, y + h / 2);
-              ctx.closePath();
-              ctx.fill();
-
-              // Golden sun with simple rays
-              const sunCx = x + h * 0.38;
-              const sunCy = y + h * 0.5;
-              const sunR = h * 0.09;
-              ctx.fillStyle = "#FCD116";
-              ctx.beginPath();
-              ctx.arc(sunCx, sunCy, sunR, 0, Math.PI * 2);
-              ctx.fill();
-
-              ctx.strokeStyle = "#FCD116";
-              ctx.lineWidth = Math.max(1, h * 0.02);
-              const rays = 8;
-              for (let i = 0; i < rays; i++) {
-                const a = (i * Math.PI * 2) / rays;
-                const r1 = sunR * 1.6;
-                const r2 = sunR * 2.3;
-                ctx.beginPath();
-                ctx.moveTo(sunCx + Math.cos(a) * r1, sunCy + Math.sin(a) * r1);
-                ctx.lineTo(sunCx + Math.cos(a) * r2, sunCy + Math.sin(a) * r2);
-                ctx.stroke();
-              }
-
-              // Three stars at triangle vertices
-              const starR = h * 0.06;
-              const starIR = starR * 0.5;
-              // Near top-left corner inside triangle
-              drawStar(
-                ctx,
-                x + h * 0.18,
-                y + h * 0.12,
-                starR,
-                starIR,
-                "#FCD116"
-              );
-              // Near bottom-left corner inside triangle
-              drawStar(
-                ctx,
-                x + h * 0.18,
-                y + h * 0.88,
-                starR,
-                starIR,
-                "#FCD116"
-              );
-              // Near apex
-              drawStar(
-                ctx,
-                x + h * 0.92,
-                y + h * 0.5,
-                starR,
-                starIR,
-                "#FCD116"
-              );
-
-              ctx.restore();
-            }
-
-            const flagW = Math.min(120, Math.round(width * 0.12));
-            const edgePad = Math.round((width / 1080) * 12);
-            drawPhilippineFlag(ctx, width - flagW - edgePad, edgePad, flagW);
-            // === End flag ===
-
-            // Place the captured cards at the very top-left (top-0 left-0)
-            const baseScale = width / 1080;
-            const leftPad = Math.round(12 * baseScale); // slightly reduced padding
-            let y = leftPad;
-            const maxCardWidth = Math.min(Math.round(width * 0.3), 380); // reduced card width
-
-            const drawDataUrl = (dataUrl: string | null, maxW: number) => {
-              if (!dataUrl) return Promise.resolve();
-              return new Promise<void>((res) => {
-                const cardImg = new Image();
-                cardImg.onload = () => {
-                  const scale = Math.min(1, maxW / cardImg.width);
-                  const w = Math.round(cardImg.width * scale);
-                  const h = Math.round(cardImg.height * scale);
-
-                  // Draw with soft shadow
-                  ctx.save();
-                  ctx.shadowColor = "rgba(0,0,0,0.12)";
-                  ctx.shadowBlur = 12;
-                  ctx.shadowOffsetY = 5;
-                  ctx.drawImage(cardImg, leftPad, y, w, h);
-                  ctx.restore();
-
-                  y += h + Math.round(10 * baseScale); // reduced spacing
-                  res();
-                };
-                cardImg.src = dataUrl;
+            const loadCardImage = (dataUrl: string | null) =>
+              new Promise<HTMLImageElement | null>((res) => {
+                if (!dataUrl) return res(null);
+                const im = new Image();
+                im.onload = () => res(im);
+                im.src = dataUrl;
               });
-            };
 
             (async () => {
-              await drawDataUrl(achDataUrl, maxCardWidth);
-              await drawDataUrl(progDataUrl, maxCardWidth);
+              const [achImg, progImg] = await Promise.all([
+                loadCardImage(achDataUrl),
+                loadCardImage(progDataUrl),
+              ]);
 
-              // Footer badges under the cards (date + source on two lines)
+              // Draw achievement (left) and progress (right) at the top
+              let leftDrawnH = 0;
+              if (achImg) {
+                const scale = Math.min(1.25, leftMaxW / achImg.width);
+                const w = Math.round(achImg.width * scale);
+                const h = Math.round(achImg.height * scale);
+                ctx.save();
+                ctx.shadowColor = "rgba(0,0,0,0.12)";
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetY = 5;
+                ctx.drawImage(achImg, leftPad, cardsTop, w, h);
+                ctx.restore();
+                leftDrawnH = h;
+              }
+
+              let rightDrawnH = 0;
+              if (progImg) {
+                const scale = Math.min(1.25, rightMaxW / progImg.width);
+                const w = Math.round(progImg.width * scale);
+                const h = Math.round(progImg.height * scale);
+                const x = width - rightPad - w;
+                ctx.save();
+                ctx.shadowColor = "rgba(0,0,0,0.12)";
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetY = 5;
+                ctx.drawImage(progImg, x, cardsTop, w, h);
+                ctx.restore();
+                rightDrawnH = h;
+              }
+
+              // === Draw footer badges at the bottom-left (stacked upward) ===
               const createdOn = (() => {
                 const ca: any = (snapshot as any)?.createdAt;
                 let d: Date | null = null;
@@ -376,23 +314,27 @@ export default function ShareByUsernamePage() {
                 `Try yours  been-there-lovat.vercel.app 🗺️`,
               ];
 
-              const footerFontPx = Math.max(14, Math.round(14 * baseScale));
+              const footerFontPx = Math.max(18, Math.round(16 * baseScale));
               ctx.font = `600 ${footerFontPx}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial`;
 
-              for (const text of footerLines) {
+              const footerPad = 16; // 16px padding from edges
+              let y = height - footerPad; // bottom padding
+              const spacing = Math.round(8 * baseScale);
+
+              for (const text of [...footerLines].reverse()) {
                 const metrics = ctx.measureText(text);
                 const ascent = (metrics as any).actualBoundingBoxAscent || 10;
                 const descent = (metrics as any).actualBoundingBoxDescent || 4;
                 const textH = ascent + descent;
-                const padX = Math.round(12 * baseScale);
-                const padY = Math.round(8 * baseScale);
+                const padX = Math.round(14 * baseScale);
+                const padY = Math.round(10 * baseScale);
                 const boxW = Math.ceil(metrics.width) + padX * 2;
                 const boxH = Math.ceil(textH) + padY * 2;
-                const boxX = leftPad;
-                const boxY = y + Math.round(6 * baseScale);
+                const boxX = footerPad; // left padding
+                const boxY = y - boxH; // bottom aligned with padding
 
                 // Rounded pill background
-                const r = Math.round(10 * baseScale);
+                const r = Math.round(12 * baseScale);
                 ctx.save();
                 ctx.shadowColor = "rgba(0,0,0,0.12)";
                 ctx.shadowBlur = 9;
@@ -421,9 +363,17 @@ export default function ShareByUsernamePage() {
                 ctx.fillStyle = "#1f2937";
                 ctx.fillText(text, boxX + padX, boxY + padY + ascent);
 
-                // Advance Y for next line with small gap
-                y = boxY + boxH + Math.round(6 * baseScale);
+                y = boxY - spacing;
               }
+
+              // Restore from clip and draw subtle rounded border stroke
+              ctx.restore();
+              ctx.save();
+              ctx.strokeStyle = "rgba(0,0,0,0.08)";
+              ctx.lineWidth = Math.max(2, Math.round(2 * baseScale));
+              roundRectPath(0.5, 0.5, width - 1, height - 1, Math.max(0, cornerRadius - 1));
+              ctx.stroke();
+              ctx.restore();
 
               canvas.toBlob(
                 (b) => (b ? resolve(b) : reject(new Error("toBlob"))),
