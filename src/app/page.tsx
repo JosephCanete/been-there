@@ -66,15 +66,17 @@ export default function LandingPage() {
       {/* Decorative animated blobs */}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl"
+        className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl transform-gpu"
         animate={{ y: [0, -15, 0], opacity: [0.6, 0.9, 0.6] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        style={{ willChange: "transform, opacity" }}
       />
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl"
+        className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl transform-gpu"
         animate={{ y: [0, 20, 0], opacity: [0.6, 0.9, 0.6] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        style={{ willChange: "transform, opacity" }}
       />
 
       {/* Navigation */}
@@ -232,18 +234,18 @@ export default function LandingPage() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.3 }}
-            className="text-center"
+            className="text-center transform-gpu will-change-transform will-change-opacity"
           >
             <motion.div
               variants={fadeUp}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-100 text-blue-700 px-4 py-1.5 text-sm font-medium mb-5"
+              className="inline-flex items-center gap-2 rounded-full bg-blue-100 text-blue-700 px-4 py-1.5 text-sm font-medium mb-5 transform-gpu will-change-transform will-change-opacity"
             >
               <span className="inline-block h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
               Map Your Journey, Earn Your Title
             </motion.div>
             <motion.h2
               variants={fadeUp}
-              className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6 leading-tight"
+              className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6 leading-tight transform-gpu will-change-transform will-change-opacity"
             >
               Explore & Track
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mt-1">
@@ -252,7 +254,7 @@ export default function LandingPage() {
             </motion.h2>
             <motion.p
               variants={fadeUp}
-              className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+              className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed transform-gpu will-change-transform will-change-opacity"
             >
               Turn your journeys into achievements. Mark every place you&apos;ve
               Been There, Visited, or Lived; level up with milestones, and share
@@ -262,7 +264,7 @@ export default function LandingPage() {
             {/* Auth-aware CTA */}
             <motion.div
               variants={fadeUp}
-              className="flex flex-col sm:flex-row gap-4 justify-center mt-10"
+              className="flex flex-col sm:flex-row gap-4 justify-center mt-10 transform-gpu will-change-transform will-change-opacity"
             >
               {user ? (
                 <>
@@ -312,7 +314,7 @@ export default function LandingPage() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.3 }}
-              className="flex flex-wrap items-center justify-center gap-2 mt-8"
+              className="flex flex-wrap items-center justify-center gap-2 mt-8 transform-gpu will-change-transform will-change-opacity"
             >
               {[
                 {
@@ -351,7 +353,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-4xl mx-auto"
+            className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-4xl mx-auto transform-gpu will-change-transform will-change-opacity"
           >
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
               <div className="flex items-center space-x-3">
@@ -386,7 +388,7 @@ export default function LandingPage() {
                 <div className="space-y-5">
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="rounded-xl border border-green-200 bg-green-50 p-4"
+                    className="rounded-xl border border-green-200 bg-green-50 p-4 transform-gpu will-change-transform"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -406,11 +408,11 @@ export default function LandingPage() {
                     </div>
                     <div className="mt-3 h-2 w-full bg-green-200 rounded-full overflow-hidden">
                       <motion.div
-                        initial={{ width: "20%" }}
-                        whileInView={{ width: "66%" }}
+                        initial={{ scaleX: 0.2 }}
+                        whileInView={{ scaleX: 0.66 }}
                         viewport={{ once: true }}
                         transition={{ duration: 1, ease: "easeOut" }}
-                        className="h-full bg-green-500"
+                        className="h-full bg-green-500 origin-left transform-gpu will-change-transform"
                       />
                     </div>
                     <p className="mt-2 text-xs text-green-800">
@@ -436,7 +438,7 @@ export default function LandingPage() {
                       <motion.div
                         whileHover={{ y: -2 }}
                         key={t.label}
-                        className={`rounded-lg border px-3 py-2 text-center ${t.color}`}
+                        className={`rounded-lg border px-3 py-2 text-center ${t.color} transform-gpu will-change-transform`}
                       >
                         <p className="text-xs text-gray-500">Mark</p>
                         <p className="text-sm font-semibold">{t.label}</p>
@@ -446,7 +448,7 @@ export default function LandingPage() {
 
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="rounded-xl border border-indigo-200 bg-indigo-50 p-4"
+                    className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 transform-gpu will-change-transform"
                   >
                     <p className="text-sm text-indigo-800 font-medium mb-2">
                       Recent Badge
@@ -466,7 +468,7 @@ export default function LandingPage() {
 
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="rounded-xl border border-pink-200 bg-pink-50 p-4"
+                    className="rounded-xl border border-pink-200 bg-pink-50 p-4 transform-gpu will-change-transform"
                   >
                     <p className="text-sm text-pink-800 font-medium mb-2">
                       Share-Ready
@@ -552,7 +554,7 @@ export default function LandingPage() {
               <motion.div
                 variants={fadeUp}
                 key={f.title}
-                className={`text-center p-6 rounded-xl shadow-sm border border-gray-100 ${f.color}`}
+                className={`text-center p-6 rounded-xl shadow-sm border border-gray-100 ${f.color} transform-gpu will-change-transform will-change-opacity`}
                 whileHover={{
                   y: -4,
                   boxShadow: "0 12px 24px -8px rgba(0,0,0,0.15)",
@@ -609,7 +611,7 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ delay: s.n * 0.08 }}
-                className="relative bg-white rounded-xl border border-gray-200 p-6 shadow-sm"
+                className="relative bg-white rounded-xl border border-gray-200 p-6 shadow-sm transform-gpu will-change-transform will-change-opacity"
               >
                 <div className="absolute -top-3 left-6 inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-bold shadow">
                   {s.n}
@@ -629,7 +631,7 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="bg-white/70 border border-gray-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6"
+            className="bg-white/70 border border-gray-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 transform-gpu will-change-transform will-change-opacity"
           >
             <div className="flex items-center gap-3">
               <svg
@@ -674,7 +676,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl px-8 py-16 text-white relative overflow-hidden"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl px-8 py-16 text-white relative overflow-hidden transform-gpu will-change-transform will-change-opacity"
           >
             <motion.div
               aria-hidden

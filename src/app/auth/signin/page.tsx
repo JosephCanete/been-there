@@ -13,7 +13,7 @@ export default function SignIn() {
 
   useEffect(() => {
     if (user && !loading) {
-      router.push("/map");
+      router.push("/");
     }
   }, [user, loading, router]);
 
