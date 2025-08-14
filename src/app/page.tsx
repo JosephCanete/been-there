@@ -239,7 +239,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 rounded-full bg-blue-100 text-blue-700 px-4 py-1.5 text-sm font-medium mb-5"
             >
               <span className="inline-block h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-              Gamified travel tracker for all 81 provinces
+              Gamified travel tracker for all 80 provinces
             </motion.div>
             <motion.h2
               variants={fadeUp}
