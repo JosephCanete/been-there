@@ -609,37 +609,74 @@ export default function InteractiveMap({
                         </svg>
                       )}
                     </button>
-                    {/* Mobile-only: Create shareable link (placed below fullscreen) */}
+                  </div>
+
+                  {/* Mobile-only: bottom pinned share link CTA */}
+                  <div className="absolute inset-x-4 bottom-4 z-30 lg:hidden">
                     <button
                       onClick={createPermalinkMobile}
                       disabled={!user || isSharingMobile}
-                      className="w-8 h-8 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black lg:hidden disabled:opacity-60"
+                      aria-busy={isSharingMobile}
+                      aria-live="polite"
+                      className="w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none disabled:shadow-lg disabled:cursor-not-allowed relative overflow-hidden"
                       title={
                         !user
-                          ? "Sign in to create a shareable link"
-                          : "Create Share Link"
+                          ? "Sign in to visit your shareable link"
+                          : "Visit Your Shareable Link"
                       }
                     >
                       {isSharingMobile ? (
-                        <span className="block h-3 w-3 rounded bg-gray-400 animate-pulse" />
+                        <span className="inline-flex items-center gap-2">
+                          <span className="relative inline-flex">
+                            <span className="absolute inline-flex h-5 w-5 rounded-full bg-white/30 opacity-60 animate-ping"></span>
+                            <svg
+                              className="relative w-5 h-5 text-white animate-spin"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              aria-hidden="true"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                              />
+                            </svg>
+                          </span>
+                          <span className="text-sm font-medium">
+                            Preparing your link…
+                          </span>
+                        </span>
                       ) : (
-                        <svg
-                          className="w-4 h-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          aria-hidden="true"
-                        >
-                          <circle cx="6" cy="12" r="2" fill="currentColor" />
-                          <circle cx="18" cy="6" r="2" fill="currentColor" />
-                          <circle cx="18" cy="18" r="2" fill="currentColor" />
-                          <path
-                            d="M8 12l8-5M8 12l8 6"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <>
+                          <span className="text-sm font-medium">
+                            Visit Your Shareable Link
+                          </span>
+                          <svg
+                            className="w-4 h-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                          >
+                            <circle cx="6" cy="12" r="2" fill="currentColor" />
+                            <circle cx="18" cy="6" r="2" fill="currentColor" />
+                            <circle cx="18" cy="18" r="2" fill="currentColor" />
+                            <path
+                              d="M8 12l8-5M8 12l8 6"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </>
                       )}
                     </button>
                   </div>
