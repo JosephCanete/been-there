@@ -191,37 +191,8 @@ export default function ShareByUsernamePage() {
             const ctx = canvas.getContext("2d");
             if (!ctx) return reject(new Error("No 2D context"));
 
-            // Scale and rounded-rect clipping for the final image
+            // Scale for placements; no rounded clipping or border
             const baseScale = width / 1080;
-            const cornerRadius = Math.round(24 * baseScale);
-            const roundRectPath = (
-              x: number,
-              y: number,
-              w: number,
-              h: number,
-              r: number
-            ) => {
-              const rr = Math.max(
-                0,
-                Math.min(r, Math.floor(Math.min(w, h) / 2))
-              );
-              ctx.beginPath();
-              ctx.moveTo(x + rr, y);
-              ctx.lineTo(x + w - rr, y);
-              ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
-              ctx.lineTo(x + w, y + h - rr);
-              ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
-              ctx.lineTo(x + rr, y + h);
-              ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
-              ctx.lineTo(x, y + rr);
-              ctx.quadraticCurveTo(x, y, x + rr, y);
-              ctx.closePath();
-            };
-
-            // Clip everything to rounded corners
-            ctx.save();
-            roundRectPath(0, 0, width, height, cornerRadius);
-            ctx.clip();
 
             // Background (matches page gradient vibe)
             const grad = ctx.createLinearGradient(0, 0, width, height);
@@ -366,14 +337,7 @@ export default function ShareByUsernamePage() {
                 y = boxY - spacing;
               }
 
-              // Restore from clip and draw subtle rounded border stroke
-              ctx.restore();
-              ctx.save();
-              ctx.strokeStyle = "rgba(0,0,0,0.08)";
-              ctx.lineWidth = Math.max(2, Math.round(2 * baseScale));
-              roundRectPath(0.5, 0.5, width - 1, height - 1, Math.max(0, cornerRadius - 1));
-              ctx.stroke();
-              ctx.restore();
+              // No outer rounded border or clipping — keep square edges
 
               canvas.toBlob(
                 (b) => (b ? resolve(b) : reject(new Error("toBlob"))),
