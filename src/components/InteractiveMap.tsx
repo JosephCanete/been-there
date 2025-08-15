@@ -638,7 +638,13 @@ export default function InteractiveMap({
 
         {/* Enhanced floating tooltip */}
         {hoveredRegion && !isPanning && (
-          <div className="absolute top-2 left-2 lg:top-4 lg:left-4 bg-white rounded-lg shadow-xl p-3 lg:p-4 pointer-events-none z-20 max-w-xs border border-gray-200 transform transition-all duration-200">
+          <div
+            className="absolute bg-white rounded-lg shadow-xl p-3 lg:p-4 pointer-events-none z-20 max-w-xs border border-gray-200 transform transition-all duration-200 lg:top-4 lg:left-4"
+            style={{
+              top: "calc(env(safe-area-inset-top, 0px) + 0.5rem)",
+              left: "calc(env(safe-area-inset-left, 0px) + 0.5rem)",
+            }}
+          >
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-bold text-gray-800 text-sm lg:text-lg">
                 {getRegionName(hoveredRegion)}
