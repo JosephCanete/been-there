@@ -336,6 +336,19 @@ export default function InteractiveMap({
     if (!user || isSharingMobile) return;
     setIsSharingMobile(true);
     try {
+      // Require username for new share URLs; if missing, send user to onboarding to pick one
+      if (!shareUsername) {
+        // Save latest state then navigate to onboarding to set username
+        try {
+          const emptyRef = doc(db, "profiles", user.uid);
+          // No-op read to ensure permissions; ignore errors
+          await getDoc(emptyRef);
+        } catch {}
+        // Redirect to onboarding/profile page
+        router.push("/onboarding");
+        return;
+      }
+
       const stateHash = computeStateHash();
       const docId = user.uid;
       const ref = doc(db, "snapshots", docId);
@@ -363,9 +376,9 @@ export default function InteractiveMap({
           createdAt: serverTimestamp(),
         });
       }
-      const url = shareUsername
-        ? `${window.location.origin}/${encodeURIComponent(shareUsername)}/share`
-        : `${window.location.origin}/share/${encodeURIComponent(docId)}`;
+      const url = `${window.location.origin}/${encodeURIComponent(
+        shareUsername
+      )}/share`;
       // Navigate to the share URL on success
       router.push(url);
     } catch (e) {

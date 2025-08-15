@@ -85,6 +85,13 @@ export default function MapSnapshot({
         setShareError("Please sign in to create a shareable link.");
         return;
       }
+      // Require username for new share URLs
+      if (!username) {
+        setShareError(
+          "Please set a username to create a shareable link (go to Onboarding)."
+        );
+        return;
+      }
       // 1:1 mapping: one snapshot document per user (doc id = user.uid)
       const stateHash = computeStateHash();
       const docId = user.uid;
@@ -113,9 +120,9 @@ export default function MapSnapshot({
           createdAt: serverTimestamp(),
         });
       }
-      const url = username
-        ? `${window.location.origin}/${encodeURIComponent(username)}/share`
-        : `${window.location.origin}/share/${encodeURIComponent(docId)}`;
+      const url = `${window.location.origin}/${encodeURIComponent(
+        username
+      )}/share`;
       setShareUrl(url);
       try {
         await navigator.clipboard.writeText(url);
