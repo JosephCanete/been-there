@@ -17,6 +17,7 @@ import { useAuth } from "@/components/AuthProvider";
 import Link from "next/link";
 import { getLevelInfo } from "@/utils/gamification";
 import * as htmlToImage from "html-to-image";
+import { canManageShare } from "@/utils/auth";
 
 interface SnapshotDoc {
   mapState: MapState;
@@ -40,6 +41,8 @@ export default function ShareByUsernamePage() {
   // New: server-generated caption state
   const [caption, setCaption] = useState<string>("");
   const fileName = `been-there-${username}.png`;
+  // Track the owner uid tied to this perma share
+  const [ownerUid, setOwnerUid] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -54,6 +57,7 @@ export default function ShareByUsernamePage() {
           return;
         }
         const uidVal = (unameSnap.data() as any)?.uid as string;
+        setOwnerUid(uidVal);
         // load snapshot at snapshots/<uid>
         const snapRef = doc(db, "snapshots", uidVal);
         const snap = await getDoc(snapRef);
@@ -514,6 +518,7 @@ export default function ShareByUsernamePage() {
   } = getLevelInfo(visitedTotal, totalProvinces);
 
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+  const ownsShare = canManageShare(user?.uid ?? null, ownerUid);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -540,7 +545,7 @@ export default function ShareByUsernamePage() {
               href={`/`}
               className="w-full px-4 py-2.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold shadow-sm hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
-              Back to Home
+              {ownsShare ? "Back to Home" : "Try It Yourself"}
             </Link>
 
             <div
@@ -587,54 +592,62 @@ export default function ShareByUsernamePage() {
             </div>
 
             {/* Share this snapshot */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-gray-800">
-                Your shareable link
-              </h3>
-              <div className="flex items-center gap-2">
-                <input
-                  className="flex-1 px-2 py-2 text-xs border rounded text-black bg-white"
-                  value={currentUrl}
-                  readOnly
-                />
-                <CopyButton
-                  text={currentUrl}
-                  className="px-3 py-2 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-70"
-                  initialLabel="Copy"
-                  copiedLabel="Copied"
-                />
-              </div>
-            </div>
+            {ownsShare && (
+              <>
+                <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Your shareable link
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="flex-1 px-2 py-2 text-xs border rounded text-black bg-white"
+                      value={currentUrl}
+                      readOnly
+                    />
+                    <CopyButton
+                      text={currentUrl}
+                      className="px-3 py-2 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-70"
+                      initialLabel="Copy"
+                      copiedLabel="Copied"
+                    />
+                  </div>
+                </div>
 
-            {/* Social share card */}
-            <div className="bg-white rounded-xl shadow border border-gray-200 p-5 space-y-4">
-              <h3 className="text-sm font-semibold text-gray-800">
-                Share social
-              </h3>
-              <p className="text-xs text-gray-500">
-                Create an image of your map and share it as a Story.
-              </p>
+                {/* Social share card */}
+                <div className="bg-white rounded-xl shadow border border-gray-200 p-5 space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Share social
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Create an image of your map and share it as a Story.
+                  </p>
 
-              <div className="space-y-2">
-                <button
-                  onClick={() => shareAsStory("instagram")}
-                  disabled={isGeneratingImage}
-                  className="w-full px-4 py-2.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold shadow-sm hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-70"
-                >
-                  Share social
-                </button>
-                <button
-                  onClick={downloadImage}
-                  disabled={isGeneratingImage}
-                  className="w-full px-4 py-2.5 rounded-md border text-xs text-black font-medium hover:bg-gray-50 disabled:opacity-70"
-                >
-                  {isGeneratingImage ? "Preparing image…" : "Download image"}
-                </button>
-                {shareMessage && (
-                  <div className="text-xs text-gray-600">{shareMessage}</div>
-                )}
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => shareAsStory("instagram")}
+                      disabled={isGeneratingImage}
+                      className="w-full px-4 py-2.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold shadow-sm hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-70"
+                    >
+                      Share social
+                    </button>
+                    <button
+                      onClick={downloadImage}
+                      disabled={isGeneratingImage}
+                      className="w-full px-4 py-2.5 rounded-md border text-xs text-black font-medium hover:bg-gray-50 disabled:opacity-70"
+                    >
+                      {isGeneratingImage
+                        ? "Preparing image…"
+                        : "Download image"}
+                    </button>
+                    {shareMessage && (
+                      <div className="text-xs text-gray-600">
+                        {shareMessage}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Try it yourself CTA */}
             {!user && (
