@@ -589,7 +589,7 @@ export default function ShareByUsernamePage() {
             {/* Share this snapshot */}
             <div className="bg-white rounded-xl shadow border border-gray-200 p-4 space-y-2">
               <h3 className="text-sm font-semibold text-gray-800">
-                Share this snapshot
+                Your shareable link
               </h3>
               <div className="flex items-center gap-2">
                 <input

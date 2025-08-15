@@ -16,6 +16,9 @@ import { useAuth } from "./AuthProvider";
 import MapStatsDisplay from "./MapStats";
 import MapSnapshot from "./MapSnapshot";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { db } from "@/lib/firebase";
+import { serverTimestamp, doc, getDoc, setDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
 interface InteractiveMapProps {
   className?: string;
@@ -29,6 +32,7 @@ export default function InteractiveMap({
   className = "",
 }: InteractiveMapProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [mapState, setMapState] = useState<MapState>({});
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [clickedRegion, setClickedRegion] = useState<string | null>(null);
@@ -50,6 +54,9 @@ export default function InteractiveMap({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // Mobile share state
+  const [isSharingMobile, setIsSharingMobile] = useState(false);
+  const [shareUsername, setShareUsername] = useState<string | null>(null);
 
   // Load SVG content and parse regions
   useEffect(() => {
@@ -91,6 +98,25 @@ export default function InteractiveMap({
     };
 
     loadSVG();
+  }, [user]);
+
+  // Load username for friendly share URLs (mobile share button)
+  useEffect(() => {
+    if (!user) {
+      setShareUsername(null);
+      return;
+    }
+    const run = async () => {
+      try {
+        const profileRef = doc(db, "profiles", user.uid);
+        const snap = await getDoc(profileRef);
+        const u = (snap.exists() && (snap.data() as any)?.username) || null;
+        setShareUsername(typeof u === "string" && u.length > 0 ? u : null);
+      } catch (e) {
+        setShareUsername(null);
+      }
+    };
+    run();
   }, [user]);
 
   useEffect(() => {
@@ -164,14 +190,16 @@ export default function InteractiveMap({
       // Exit fullscreen
       if (
         document.exitFullscreen ||
-        d.webkitExitFullscreen ||
-        d.msExitFullscreen ||
-        d.mozCancelFullScreen
+        (d as any).webkitExitFullscreen ||
+        (d as any).msExitFullscreen ||
+        (d as any).mozCancelFullScreen
       ) {
         if (document.exitFullscreen) document.exitFullscreen();
-        else if (d.webkitExitFullscreen) d.webkitExitFullscreen();
-        else if (d.msExitFullscreen) d.msExitFullscreen();
-        else if (d.mozCancelFullScreen) d.mozCancelFullScreen();
+        else if ((d as any).webkitExitFullscreen)
+          (d as any).webkitExitFullscreen();
+        else if ((d as any).msExitFullscreen) (d as any).msExitFullscreen();
+        else if ((d as any).mozCancelFullScreen)
+          (d as any).mozCancelFullScreen();
       } else {
         setIsPseudoFullscreen(false);
       }
@@ -284,14 +312,77 @@ export default function InteractiveMap({
     return titleMatch ? titleMatch[1] : provinceId.replace("PH-", "");
   };
 
+  // Compute deterministic state hash (shared with MapSnapshot)
+  const computeStateHash = (): string => {
+    const stableStringify = (obj: unknown): string => {
+      if (obj === null || typeof obj !== "object") return JSON.stringify(obj);
+      const record = obj as Record<string, unknown>;
+      const keys = Object.keys(record).sort();
+      const entries = keys.map(
+        (k) => `${JSON.stringify(k)}:${stableStringify(record[k])}`
+      );
+      return `{${entries.join(",")}}`;
+    };
+    const payload = `${stableStringify(mapState)}|${stableStringify(stats)}`;
+    let hash = 5381;
+    for (let i = 0; i < payload.length; i++) {
+      hash = (hash * 33) ^ payload.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(16);
+  };
+
+  // Create shareable link (mobile icon button)
+  const createPermalinkMobile = useCallback(async () => {
+    if (!user || isSharingMobile) return;
+    setIsSharingMobile(true);
+    try {
+      const stateHash = computeStateHash();
+      const docId = user.uid;
+      const ref = doc(db, "snapshots", docId);
+      const existing = await getDoc(ref);
+      if (existing.exists()) {
+        await setDoc(
+          ref,
+          {
+            mapState,
+            stats,
+            stateHash,
+            userDisplayName: user?.displayName ?? null,
+            userId: user.uid,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } else {
+        await setDoc(ref, {
+          mapState,
+          stats,
+          stateHash,
+          userDisplayName: user?.displayName ?? null,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+        });
+      }
+      const url = shareUsername
+        ? `${window.location.origin}/${encodeURIComponent(shareUsername)}/share`
+        : `${window.location.origin}/share/${encodeURIComponent(docId)}`;
+      // Navigate to the share URL on success
+      router.push(url);
+    } catch (e) {
+      console.error("Error creating permalink (mobile):", e);
+    } finally {
+      setIsSharingMobile(false);
+    }
+  }, [user, isSharingMobile, mapState, stats, shareUsername, router]);
+
   // Render interactive SVG
   const renderInteractiveSVG = () => {
     if (!svgContent) return null;
 
     // Parse the SVG content
     const parser = new DOMParser();
-    const doc = parser.parseFromString(svgContent, "image/svg+xml");
-    const svgElement = doc.querySelector("svg");
+    const docXml = parser.parseFromString(svgContent, "image/svg+xml");
+    const svgElement = docXml.querySelector("svg");
 
     if (!svgElement) return null;
 
@@ -505,17 +596,39 @@ export default function InteractiveMap({
                         </svg>
                       )}
                     </button>
-                  </div>
-
-                  {/* Mobile actions overlay: visible without causing scroll */}
-                  <div className="absolute left-2 right-2 bottom-2 lg:hidden z-30">
-                    <div className="border border-gray-200 bg-white rounded-lg shadow-lg p-2">
-                      <MapSnapshot
-                        mapState={mapState}
-                        stats={stats}
-                        svgContent={svgContent}
-                      />
-                    </div>
+                    {/* Mobile-only: Create shareable link (placed below fullscreen) */}
+                    <button
+                      onClick={createPermalinkMobile}
+                      disabled={!user || isSharingMobile}
+                      className="w-8 h-8 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black lg:hidden disabled:opacity-60"
+                      title={
+                        !user
+                          ? "Sign in to create a shareable link"
+                          : "Create Share Link"
+                      }
+                    >
+                      {isSharingMobile ? (
+                        <span className="block h-3 w-3 rounded bg-gray-400 animate-pulse" />
+                      ) : (
+                        <svg
+                          className="w-4 h-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <circle cx="6" cy="12" r="2" fill="currentColor" />
+                          <circle cx="18" cy="6" r="2" fill="currentColor" />
+                          <circle cx="18" cy="18" r="2" fill="currentColor" />
+                          <path
+                            d="M8 12l8-5M8 12l8 6"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </button>
                   </div>
                 </>
               );

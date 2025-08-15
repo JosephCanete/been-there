@@ -318,7 +318,7 @@ export default function LandingPage() {
             >
               {[
                 {
-                  label: "Levels, badges & streaks",
+                  label: "Levels & badges.",
                   color: "bg-green-50 text-green-700 border-green-200",
                 },
                 {
