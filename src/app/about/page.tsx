@@ -22,7 +22,7 @@ export default function AboutPage() {
     },
     {
       q: "How do status levels work on the map?",
-      a: "Tap or click a province to cycle through statuses like Not Visited, Visited, Been There, and Lived. Your selections auto‑save.",
+      a: "Tap or click a province to cycle through statuses like Not Visited, Stayed There, Been There, and Lived There. Your selections auto‑save.",
     },
     {
       q: "Can I use it on mobile?",
@@ -299,7 +299,7 @@ export default function AboutPage() {
               <div className="flex items-center gap-4 p-4 rounded-lg ring-1 ring-blue-200/60 bg-blue-50/60">
                 <div className="w-6 h-6 rounded border-2 border-blue-700 bg-blue-500" />
                 <div>
-                  <h4 className="font-semibold text-blue-800">Visited</h4>
+                  <h4 className="font-semibold text-blue-800">Stayed There</h4>
                   <p className="text-blue-700 text-sm">
                     Destinations you’ve stayed in or spent meaningful time
                   </p>
@@ -308,7 +308,7 @@ export default function AboutPage() {
               <div className="flex items-center gap-4 p-4 rounded-lg ring-1 ring-rose-200/60 bg-rose-50/60">
                 <div className="w-6 h-6 rounded border-2 border-rose-700 bg-rose-500" />
                 <div>
-                  <h4 className="font-semibold text-rose-800">Lived</h4>
+                  <h4 className="font-semibold text-rose-800">Lived There</h4>
                   <p className="text-rose-700 text-sm">
                     Places you’ve called home for months or years
                   </p>

@@ -160,9 +160,9 @@ export const getStatusLabel = (status: VisitStatus): string => {
     case "been-there":
       return "Been There";
     case "stayed-there":
-      return "Visited";
+      return "Stayed There";
     case "passed-by":
-      return "Lived";
+      return "Lived There";
     case "not-visited":
     default:
       return "Not Visited";

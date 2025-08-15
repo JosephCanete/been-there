@@ -257,8 +257,9 @@ export default function LandingPage() {
               className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed transform-gpu will-change-transform will-change-opacity"
             >
               Turn your journeys into achievements. Mark every place you&apos;ve
-              Been There, Visited, or Lived; level up with milestones, and share
-              a beautiful profile showcasing your story across the archipelago.
+              Been There, Stayed There, or Lived There; level up with
+              milestones, and share a beautiful profile showcasing your story
+              across the archipelago.
             </motion.p>
 
             {/* Auth-aware CTA */}
@@ -322,7 +323,7 @@ export default function LandingPage() {
                   color: "bg-green-50 text-green-700 border-green-200",
                 },
                 {
-                  label: "Mark Explorer: Been There / Visited / Lived",
+                  label: "Mark Explorer: Been There / Stayed There / Lived",
                   color: "bg-indigo-50 text-indigo-700 border-indigo-200",
                 },
                 {
@@ -427,11 +428,11 @@ export default function LandingPage() {
                         color: "bg-green-50 border-green-200 text-green-800",
                       },
                       {
-                        label: "Visited",
+                        label: "Stayed There",
                         color: "bg-blue-50 border-blue-200 text-blue-800",
                       },
                       {
-                        label: "Lived",
+                        label: "Lived There",
                         color: "bg-pink-50 border-pink-200 text-pink-800",
                       },
                     ].map((t) => (
@@ -510,7 +511,7 @@ export default function LandingPage() {
               },
               {
                 title: "Mark Explorer",
-                desc: "Tag provinces as Been There, Visited, or Lived.",
+                desc: "Tag provinces as Been There, Stayed There, or Lived There.",
                 icon: (
                   <svg
                     className="w-8 h-8 text-blue-600"
@@ -592,7 +593,7 @@ export default function LandingPage() {
               {
                 n: 2,
                 t: "Mark places",
-                d: "Tap a province to mark Been There, Visited, or Lived.",
+                d: "Tap a province to mark Been There, Stayed There, or Lived There.",
               },
               {
                 n: 3,

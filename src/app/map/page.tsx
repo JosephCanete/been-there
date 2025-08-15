@@ -7,10 +7,48 @@ import InteractiveMap from "@/components/InteractiveMap";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 export default function MapPage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+
+  // Disable page scrolling entirely while on the map page (mobile + desktop)
+  useEffect(() => {
+    const html = document.documentElement as HTMLElement;
+    const body = document.body as HTMLBodyElement & {
+      style: CSSStyleDeclaration & { overscrollBehavior?: string };
+    };
+
+    const prevHtmlOverflow = html.style.overflow;
+    const prevHtmlHeight = html.style.height;
+    const prevHtmlOverscroll = (html.style as any).overscrollBehavior;
+
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyHeight = body.style.height;
+    const prevBodyOverscroll = (body.style as any).overscrollBehavior;
+    const prevBodyTouchAction = (body.style as any).touchAction;
+
+    html.style.overflow = "hidden";
+    html.style.height = "100%";
+    (html.style as any).overscrollBehavior = "none";
+
+    body.style.overflow = "hidden";
+    body.style.height = "100%";
+    (body.style as any).overscrollBehavior = "none";
+    (body.style as any).touchAction = "none";
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      html.style.height = prevHtmlHeight;
+      (html.style as any).overscrollBehavior = prevHtmlOverscroll;
+
+      body.style.overflow = prevBodyOverflow;
+      body.style.height = prevBodyHeight;
+      (body.style as any).overscrollBehavior = prevBodyOverscroll;
+      (body.style as any).touchAction = prevBodyTouchAction;
+    };
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -23,7 +61,7 @@ export default function MapPage() {
 
   return (
     <ProtectedRoute showSkeleton={false}>
-      <div className="h-screen flex flex-col bg-white">
+      <div className="h-screen flex flex-col bg-white overflow-hidden">
         {/* Compact Header */}
         <header className="bg-gradient-to-r from-blue-600 to-indigo-700 shadow-lg z-10">
           <div className="px-4 sm:px-6 py-3 sm:py-4">

@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
+
+interface Stats {
+  beenThere: number;
+  stayedThere: number;
+  passedBy: number;
+  notVisited: number;
+  total: number;
+}
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 type RequestBody = {
   username?: string;
   // Stats are optional; when provided we will celebrate progress using them
-  stats?: {
-    total: number;
-    beenThere: number;
-    stayedThere: number;
-    passedBy: number;
-    notVisited: number;
-  };
+  stats?: Stats;
   model?: string;
 };
 

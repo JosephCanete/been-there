@@ -723,7 +723,7 @@ export default function ShareByUsernamePage() {
                         style={{ backgroundColor: "#3b82f6" }}
                         aria-hidden
                       />{" "}
-                      <span className="text-gray-700">Visited</span>
+                      <span className="text-gray-700">Stayed There</span>
                     </div>
                     <span className="font-semibold text-gray-900">
                       {snapshot.stats.stayedThere}
@@ -747,7 +747,7 @@ export default function ShareByUsernamePage() {
                         style={{ backgroundColor: "#dc2626" }}
                         aria-hidden
                       />{" "}
-                      <span className="text-gray-700">Lived</span>
+                      <span className="text-gray-700">Lived There</span>
                     </div>
                     <span className="font-semibold text-gray-900">
                       {snapshot.stats.passedBy}
