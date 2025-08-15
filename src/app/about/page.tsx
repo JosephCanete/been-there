@@ -215,12 +215,6 @@ export default function AboutPage() {
                 </svg>
                 Connect on LinkedIn
               </a>
-              <a
-                href="mailto:hello@example.com"
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 text-gray-700 px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
-                ✉️ Contact
-              </a>
             </div>
           </motion.section>
 
