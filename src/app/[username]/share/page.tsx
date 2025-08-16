@@ -38,8 +38,6 @@ export default function ShareByUsernamePage() {
   const svgHostRef = useRef<HTMLDivElement | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
-  // New: server-generated caption state
-  const [caption, setCaption] = useState<string>("");
   const fileName = `been-there-${username}.png`;
   // Track the owner uid tied to this perma share
   const [ownerUid, setOwnerUid] = useState<string | null>(null);
@@ -84,24 +82,6 @@ export default function ShareByUsernamePage() {
         const resp = await fetch("/philippines.svg");
         setSvgContent(await resp.text());
         setLoading(false);
-
-        // After snapshot is available, request a caption from our API
-        if (snapData?.stats) {
-          try {
-            const res = await fetch("/api/share-caption", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username, stats: snapData.stats }),
-            });
-            const json = await res.json();
-            if (!res.ok) {
-              throw new Error(json?.error || "Failed to get caption");
-            }
-            if (json?.caption) setCaption(json.caption as string);
-          } catch (e: any) {
-            console.error("Caption error:", e);
-          }
-        }
       } catch (e) {
         console.error(e);
         setError("Failed to load");
@@ -149,7 +129,6 @@ export default function ShareByUsernamePage() {
   const getCurrentUrl = () =>
     (typeof window !== "undefined" && window.location.href) || "";
   const getShareText = () =>
-    caption?.trim() ||
     `${username}'s Philippines travel progress — check it out!`;
 
   const generatePngBlob = async (): Promise<Blob | null> => {
