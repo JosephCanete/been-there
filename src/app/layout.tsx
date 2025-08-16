@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   title: "Been There Philippines - Track Your Adventures",
   description:
     "Interactive travel tracker for exploring the beautiful Philippines. Document your journey across all regions and provinces.",
+};
+
+// Ensure safe-area env() works on iOS (prevents bottom CTA being covered)
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

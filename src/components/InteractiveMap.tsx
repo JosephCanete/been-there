@@ -532,10 +532,48 @@ export default function InteractiveMap({
                         </svg>
                       )}
                     </button>
+                    {/* New Share button below fullscreen */}
+                    <button
+                      onClick={createPermalinkMobile}
+                      disabled={!user || isSharingMobile}
+                      className="w-8 h-8 lg:w-10 lg:h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors text-black disabled:opacity-60"
+                      title={
+                        !user
+                          ? "Sign in to visit your shareable link"
+                          : "Visit Your Shareable Link"
+                      }
+                      aria-busy={isSharingMobile}
+                    >
+                      {/* Share icon */}
+                      <svg
+                        className="w-4 h-4 lg:w-5 lg:h-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <circle cx="6" cy="12" r="2" fill="currentColor" />
+                        <circle cx="18" cy="6" r="2" fill="currentColor" />
+                        <circle cx="18" cy="18" r="2" fill="currentColor" />
+                        <path
+                          d="M8 12l8-5M8 12l8 6"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
                   </div>
 
                   {/* Mobile-only: bottom pinned share link CTA */}
-                  <div className="absolute inset-x-4 bottom-4 z-30 lg:hidden">
+                  <div
+                    className="fixed z-30 lg:hidden"
+                    style={{
+                      bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
+                      left: "calc(env(safe-area-inset-left, 0px) + 1rem)",
+                      right: "calc(env(safe-area-inset-right, 0px) + 1rem)",
+                    }}
+                  >
                     <button
                       onClick={createPermalinkMobile}
                       disabled={!user || isSharingMobile}

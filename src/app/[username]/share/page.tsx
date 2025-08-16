@@ -44,6 +44,19 @@ export default function ShareByUsernamePage() {
   // Track the owner uid tied to this perma share
   const [ownerUid, setOwnerUid] = useState<string | null>(null);
 
+  // Ensure scrolling is enabled when arriving from pages that may lock body scroll
+  useEffect(() => {
+    const html = document.documentElement as HTMLElement;
+    const body = document.body as HTMLBodyElement;
+    // Reset any leftover locks
+    html.style.overflow = "";
+    body.style.overflow = "";
+    body.style.touchAction = "auto";
+    return () => {
+      // no-op
+    };
+  }, []);
+
   useEffect(() => {
     const run = async () => {
       if (!username) return;
