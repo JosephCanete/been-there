@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { MapStats } from "@/types/map";
+import { MapStats, MapState } from "@/types/map";
 import {
   loadMapState,
   calculateMapStats,
@@ -15,6 +15,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useRouter } from "next/navigation";
 import { buildLevels, getLevelInfo, PRE_LEVEL } from "@/utils/gamification";
 import { motion } from "framer-motion";
+import { loadUsername, saveSnapshot, buildShareUrl } from "@/utils/share";
+import { db } from "@/lib/firebase";
+import { doc } from "firebase/firestore";
 
 export default function StatsPage() {
   const { user, signOut } = useAuth();
@@ -26,7 +29,9 @@ export default function StatsPage() {
     notVisited: 0,
     total: 0,
   });
+  const [mapState, setMapState] = useState<MapState>({});
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -40,9 +45,12 @@ export default function StatsPage() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const mapState = await loadMapState(user);
-        const calculatedStats = calculateMapStats(mapState, PH_PROV_COUNT);
-
+        const loadedMapState = await loadMapState(user);
+        const calculatedStats = calculateMapStats(
+          loadedMapState,
+          PH_PROV_COUNT
+        );
+        setMapState(loadedMapState);
         setStats(calculatedStats);
         setIsLoaded(true);
       } catch (error) {
@@ -85,6 +93,24 @@ export default function StatsPage() {
       mqNarrow.removeEventListener("change", update);
     };
   }, []);
+
+  const handleVisitShareLink = async () => {
+    if (!user || isSharing) return;
+    setIsSharing(true);
+    const username = await loadUsername(user.uid);
+    if (!username) {
+      router.push("/onboarding");
+      return;
+    }
+    const isSnapshotAvailable = doc(db, "snapshots", user.uid);
+    if (isSnapshotAvailable) {
+      await saveSnapshot(mapState, stats, user);
+      router.push(`/${encodeURIComponent(username)}/share`);
+    } else {
+      setIsSharing(false);
+      router.push(`/map`);
+    }
+  };
 
   if (!isLoaded) {
     return (
@@ -372,6 +398,17 @@ export default function StatsPage() {
                     <div className="text-xs mt-1 opacity-90">
                       {exploredRegions}/{totalProvinces} provinces explored
                     </div>
+                    <div className="mt-3">
+                      <button
+                        onClick={handleVisitShareLink}
+                        disabled={isSharing || !user}
+                        className="px-3 py-2 text-xs font-medium text-indigo-600 bg-white hover:bg-indigo-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-indigo-600 transition-all duration-200 shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {isSharing
+                          ? "Looking Your Snapshot"
+                          : "Visit Your Shareable Link"}
+                      </button>
+                    </div>
                   </div>
                   <motion.div
                     initial={{ rotate: -10, scale: 0.9 }}
@@ -557,7 +594,7 @@ export default function StatsPage() {
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                       <span>Been There</span>
                       <span>Stayed There</span>
-                      <span>Lived There</span>
+                      <span> There</span>
                     </div>
                   </div>
                 </div>

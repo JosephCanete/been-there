@@ -16,9 +16,8 @@ import { useAuth } from "./AuthProvider";
 import MapStatsDisplay from "./MapStats";
 import MapSnapshot from "./MapSnapshot";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { db } from "@/lib/firebase";
-import { serverTimestamp, doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import { loadUsername, saveSnapshot, buildShareUrl } from "@/utils/share";
 
 interface InteractiveMapProps {
   className?: string;
@@ -56,7 +55,26 @@ export default function InteractiveMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   // Mobile share state
   const [isSharingMobile, setIsSharingMobile] = useState(false);
-  const [shareUsername, setShareUsername] = useState<string | null>(null);
+
+  // Create shareable link (mobile icon button)
+  const createPermalinkMobile = useCallback(async () => {
+    if (!user || isSharingMobile) return;
+    setIsSharingMobile(true);
+    try {
+      const username = await loadUsername(user.uid);
+      if (!username) {
+        router.push("/onboarding");
+        return;
+      }
+      await saveSnapshot(mapState, stats, user);
+      const url = buildShareUrl(username);
+      router.push(url);
+    } catch (e) {
+      console.error("Error creating permalink (mobile):", e);
+    } finally {
+      setIsSharingMobile(false);
+    }
+  }, [user, isSharingMobile, mapState, stats, router]);
 
   // Load SVG content and parse regions
   useEffect(() => {
@@ -98,25 +116,6 @@ export default function InteractiveMap({
     };
 
     loadSVG();
-  }, [user]);
-
-  // Load username for friendly share URLs (mobile share button)
-  useEffect(() => {
-    if (!user) {
-      setShareUsername(null);
-      return;
-    }
-    const run = async () => {
-      try {
-        const profileRef = doc(db, "profiles", user.uid);
-        const snap = await getDoc(profileRef);
-        const u = (snap.exists() && (snap.data() as any)?.username) || null;
-        setShareUsername(typeof u === "string" && u.length > 0 ? u : null);
-      } catch (e) {
-        setShareUsername(null);
-      }
-    };
-    run();
   }, [user]);
 
   useEffect(() => {
@@ -311,82 +310,6 @@ export default function InteractiveMap({
     );
     return titleMatch ? titleMatch[1] : provinceId.replace("PH-", "");
   };
-
-  // Compute deterministic state hash (shared with MapSnapshot)
-  const computeStateHash = (): string => {
-    const stableStringify = (obj: unknown): string => {
-      if (obj === null || typeof obj !== "object") return JSON.stringify(obj);
-      const record = obj as Record<string, unknown>;
-      const keys = Object.keys(record).sort();
-      const entries = keys.map(
-        (k) => `${JSON.stringify(k)}:${stableStringify(record[k])}`
-      );
-      return `{${entries.join(",")}}`;
-    };
-    const payload = `${stableStringify(mapState)}|${stableStringify(stats)}`;
-    let hash = 5381;
-    for (let i = 0; i < payload.length; i++) {
-      hash = (hash * 33) ^ payload.charCodeAt(i);
-    }
-    return (hash >>> 0).toString(16);
-  };
-
-  // Create shareable link (mobile icon button)
-  const createPermalinkMobile = useCallback(async () => {
-    if (!user || isSharingMobile) return;
-    setIsSharingMobile(true);
-    try {
-      // Require username for new share URLs; if missing, send user to onboarding to pick one
-      if (!shareUsername) {
-        // Save latest state then navigate to onboarding to set username
-        try {
-          const emptyRef = doc(db, "profiles", user.uid);
-          // No-op read to ensure permissions; ignore errors
-          await getDoc(emptyRef);
-        } catch {}
-        // Redirect to onboarding/profile page
-        router.push("/onboarding");
-        return;
-      }
-
-      const stateHash = computeStateHash();
-      const docId = user.uid;
-      const ref = doc(db, "snapshots", docId);
-      const existing = await getDoc(ref);
-      if (existing.exists()) {
-        await setDoc(
-          ref,
-          {
-            mapState,
-            stats,
-            stateHash,
-            userDisplayName: user?.displayName ?? null,
-            userId: user.uid,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-      } else {
-        await setDoc(ref, {
-          mapState,
-          stats,
-          stateHash,
-          userDisplayName: user?.displayName ?? null,
-          userId: user.uid,
-          createdAt: serverTimestamp(),
-        });
-      }
-      const url = `${window.location.origin}/${encodeURIComponent(
-        shareUsername
-      )}/share`;
-      // Navigate to the share URL on success
-      router.push(url);
-    } catch (e) {
-      console.error("Error creating permalink (mobile):", e);
-    } finally {
-      setIsSharingMobile(false);
-    }
-  }, [user, isSharingMobile, mapState, stats, shareUsername, router]);
 
   // Render interactive SVG
   const renderInteractiveSVG = () => {
