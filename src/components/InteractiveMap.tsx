@@ -20,15 +20,13 @@ import { useRouter } from "next/navigation";
 import { loadUsername, saveSnapshot, buildShareUrl } from "@/utils/share";
 
 interface InteractiveMapProps {
-  className?: string;
+  initialSvgContent: string;
+  initialValidProvinceIds: string[];
 }
 
-/**
- * Interactive SVG Map of the Philippines using real geographic data
- * Uses the amCharts SVG file and allows interaction with individual provinces/regions
- */
 export default function InteractiveMap({
-  className = "",
+  initialSvgContent,
+  initialValidProvinceIds,
 }: InteractiveMapProps) {
   const { user } = useAuth();
   const router = useRouter();
@@ -36,9 +34,9 @@ export default function InteractiveMap({
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [clickedRegion, setClickedRegion] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [svgContent, setSvgContent] = useState<string>("");
+  const [svgContent] = useState<string>(initialSvgContent);
   // Province ids we count for stats (derived from SVG PH-* ids)
-  const [validProvinceIds, setValidProvinceIds] = useState<string[]>([]);
+  const [validProvinceIds] = useState<string[]>(initialValidProvinceIds);
   const [stats, setStats] = useState<MapStats>({
     beenThere: 0,
     stayedThere: 0,
@@ -76,47 +74,28 @@ export default function InteractiveMap({
     }
   }, [user, isSharingMobile, mapState, stats, router]);
 
-  // Load SVG content and parse regions
+  // Load saved state and compute stats using preloaded SVG data
   useEffect(() => {
-    const loadSVG = async () => {
+    const loadState = async () => {
       try {
-        const response = await fetch("/philippines.svg");
-        const svgText = await response.text();
-        // Normalize some outdated province names in title attributes for display
-        const normalizedSvgText = svgText.replace(
-          /title="Compostela Valley"/g,
-          'title="Davao de Oro"'
-        );
-        setSvgContent(normalizedSvgText);
-
-        // Derive province ids we count (PH-* only) and region count from SVG
-        const phMatches = normalizedSvgText.match(/id="PH-[^"]+"/g) || [];
-        const ids = phMatches
-          .map((m) => m.match(/id="([^"]+)"/)?.[1])
-          .filter(Boolean) as string[];
-        setValidProvinceIds(ids);
-        const regionCount = ids.length;
-
-        // Load saved state using auth state
-        console.log("Loading map state for user:", user?.uid || "guest");
         const savedState = await handleAuthStateChange(user);
-        console.log("Loaded map state:", savedState);
         setMapState(savedState);
-        // Calculate stats based on SVG-derived total and ids only
+        const regionCount = validProvinceIds.length;
         const filteredForStats = Object.fromEntries(
-          Object.entries(savedState).filter(([k]) => ids.includes(k))
+          Object.entries(savedState).filter(([k]) =>
+            validProvinceIds.includes(k)
+          )
         ) as MapState;
         setStats(calculateMapStats(filteredForStats, regionCount));
-        console.log(`Using SVG region count ${regionCount} for stats.`);
         setIsLoaded(true);
       } catch (error) {
-        console.error("Error loading Philippines SVG:", error);
+        console.error("Error loading saved map state:", error);
         setIsLoaded(true);
       }
     };
 
-    loadSVG();
-  }, [user]);
+    loadState();
+  }, [user, validProvinceIds]);
 
   useEffect(() => {
     const handleFsChange = () => {
@@ -205,30 +184,6 @@ export default function InteractiveMap({
     }
   }, [isFullscreen, isPseudoFullscreen]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyboard = (e: KeyboardEvent) => {
-      if (e.target && (e.target as HTMLElement).tagName === "INPUT") return;
-
-      switch (e.key.toLowerCase()) {
-        case "r":
-          // Reset view handled by control ref
-          controlsRef.current?.resetTransform();
-          break;
-        case "=":
-        case "+":
-          controlsRef.current?.zoomIn();
-          break;
-        case "-":
-          controlsRef.current?.zoomOut();
-          break;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyboard);
-    return () => window.removeEventListener("keydown", handleKeyboard);
-  }, []);
-
   // Save state whenever mapState changes
   useEffect(() => {
     const saveData = async () => {
@@ -259,10 +214,6 @@ export default function InteractiveMap({
         const currentStatus = (prev[regionId] as VisitStatus) || "not-visited";
         const nextStatus = getNextVisitStatus(currentStatus);
 
-        console.log(
-          `Changing ${regionId} from ${currentStatus} to ${nextStatus}`
-        );
-
         const newState = {
           ...prev,
           [regionId]: nextStatus,
@@ -274,24 +225,6 @@ export default function InteractiveMap({
     [isPanning, user]
   );
 
-  // Reset handler reused by mobile/desktop buttons
-  const handleReset = useCallback(async () => {
-    if (
-      confirm(
-        "Are you sure you want to reset all your progress? This cannot be undone."
-      )
-    ) {
-      const emptyState: MapState = {} as MapState;
-      setMapState(emptyState);
-      try {
-        await saveMapState(emptyState, user);
-      } catch (error) {
-        console.error("Error resetting progress:", error);
-      }
-    }
-  }, [user]);
-
-  // Reset zoom and pan
   const controlsRef = useRef<{
     zoomIn: () => void;
     zoomOut: () => void;
@@ -709,7 +642,7 @@ export default function InteractiveMap({
   // Loading state UI
   if (!isLoaded) {
     return (
-      <div className={`flex flex-col lg:flex-row h-full ${className}`}>
+      <div className={`flex flex-col lg:flex-row h-full w-full`}>
         {/* Map Loading Skeleton */}
         <div className="flex-1 relative min-h-[50vh] lg:h-full">
           <div
@@ -754,7 +687,7 @@ export default function InteractiveMap({
   // Main layout
   return (
     <div
-      className={`flex flex-col lg:flex-row h-[100dvh] lg:h-full overflow-hidden ${className}`}
+      className={`flex flex-col lg:flex-row h-[100dvh] lg:h-full overflow-hidden w-full `}
     >
       {/* Main Map Area - Full width on mobile, 80% on desktop */}
       <div className="relative h-full min-w-0 lg:flex-1 lg:h-full">
