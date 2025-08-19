@@ -13,43 +13,6 @@ export default function MapPage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
 
-  // Disable page scrolling entirely while on the map page (mobile + desktop)
-  useEffect(() => {
-    const html = document.documentElement as HTMLElement;
-    const body = document.body as HTMLBodyElement & {
-      style: CSSStyleDeclaration & { overscrollBehavior?: string };
-    };
-
-    const prevHtmlOverflow = html.style.overflow;
-    const prevHtmlHeight = html.style.height;
-    const prevHtmlOverscroll = (html.style as any).overscrollBehavior;
-
-    const prevBodyOverflow = body.style.overflow;
-    const prevBodyHeight = body.style.height;
-    const prevBodyOverscroll = (body.style as any).overscrollBehavior;
-    const prevBodyTouchAction = (body.style as any).touchAction;
-
-    html.style.overflow = "hidden";
-    html.style.height = "100%";
-    (html.style as any).overscrollBehavior = "none";
-
-    body.style.overflow = "hidden";
-    body.style.height = "100%";
-    (body.style as any).overscrollBehavior = "none";
-    (body.style as any).touchAction = "none";
-
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      html.style.height = prevHtmlHeight;
-      (html.style as any).overscrollBehavior = prevHtmlOverscroll;
-
-      body.style.overflow = prevBodyOverflow;
-      body.style.height = prevBodyHeight;
-      (body.style as any).overscrollBehavior = prevBodyOverscroll;
-      (body.style as any).touchAction = prevBodyTouchAction;
-    };
-  }, []);
-
   const handleSignOut = async () => {
     try {
       await signOut();
