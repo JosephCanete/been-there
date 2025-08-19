@@ -13,6 +13,14 @@ export default function MapPage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
 
+  // Disable page scrolling entirely while on the map page (mobile + desktop)
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   const handleSignOut = async () => {
     try {
       await signOut();
